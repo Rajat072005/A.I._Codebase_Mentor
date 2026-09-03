@@ -29,7 +29,7 @@ def build_code_embedding_document(chunk):
 ========================
 
 Implementation: 
-{chunk["content"]}
+{chunk["content"]} 
 """
     
     return doc.strip()
