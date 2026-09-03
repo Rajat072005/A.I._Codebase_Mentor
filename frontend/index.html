@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Codebase Mentor</title>
+  <meta name="description" content="Ask natural language questions about any GitHub repository using AI-powered code understanding." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VIEW 1: INDEX STEP
+       Shown first — user provides a GitHub URL to "index" a repo.
+       For V1, uses cached data and shows a demo animation.
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="view-index" class="view active">
+
+    <header class="app-header">
+      <div class="logo">
+        <span class="logo-icon">⟨/⟩</span>
+        <span class="logo-text">AI Codebase Mentor</span>
+      </div>
+    </header>
+
+    <main class="index-main">
+      <div class="index-hero">
+        <div class="hero-badge">Powered by Gemini 2.5 Flash</div>
+        <h1 class="hero-title">Understand Any Codebase,<br /><span class="gradient-text">Instantly</span></h1>
+        <p class="hero-subtitle">
+          Paste a GitHub repository URL and ask questions in plain English.
+          Get precise, context-aware answers drawn directly from the code.
+        </p>
+      </div>
+
+      <!-- URL Input Card -->
+      <div class="index-card" id="input-card">
+        <label class="input-label" for="repo-url-input">GitHub Repository URL</label>
+        <div class="url-input-group">
+          <span class="input-icon">🔗</span>
+          <input
+            type="url"
+            id="repo-url-input"
+            class="url-input"
+            placeholder="https://github.com/username/repository"
+            autocomplete="off"
+          />
+        </div>
+        <p class="input-hint">
+          Demo supports: <code>SyncSphere-Website</code> and <code>LeetMetrics-WebApp</code>
+        </p>
+        <button id="index-btn" class="btn-primary">
+          <span class="btn-icon">⚡</span>
+          Index Repository
+        </button>
+        <div id="index-error" class="error-message hidden"></div>
+      </div>
+
+      <!-- Indexing Progress (shown during/after indexing) -->
+      <div class="index-card hidden" id="progress-card">
+        <div class="progress-header">
+          <span class="progress-repo-name" id="progress-repo-name">Indexing...</span>
+          <span class="progress-status" id="progress-status">Processing</span>
+        </div>
+        <div class="progress-steps" id="progress-steps">
+          <div class="step" id="step-clone">
+            <span class="step-icon spinning">◌</span>
+            <span class="step-label">Cloning repository</span>
+          </div>
+          <div class="step pending" id="step-read">
+            <span class="step-icon">◌</span>
+            <span class="step-label">Reading source files</span>
+          </div>
+          <div class="step pending" id="step-embed">
+            <span class="step-icon">◌</span>
+            <span class="step-label">Generating embeddings</span>
+          </div>
+          <div class="step pending" id="step-ready">
+            <span class="step-icon">◌</span>
+            <span class="step-label">Finalizing index</span>
+          </div>
+        </div>
+        <div class="index-stats hidden" id="index-stats">
+          <div class="stat">
+            <span class="stat-value" id="stat-files">—</span>
+            <span class="stat-label">Files Indexed</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value" id="stat-chunks">—</span>
+            <span class="stat-label">Code Chunks</span>
+          </div>
+        </div>
+        <button class="btn-primary hidden" id="start-chat-btn">
+          Start Asking Questions →
+        </button>
+      </div>
+
+    </main>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════
+       VIEW 2: CHAT
+       The main Q&A interface shown after indexing is complete.
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="view-chat" class="view">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="logo-icon">⟨/⟩</span>
+        <span class="logo-text">Codebase Mentor</span>
+      </div>
+
+      <div class="sidebar-section">
+        <label class="sidebar-label">Active Repository</label>
+        <select id="repo-selector" class="repo-select">
+          <option value="">Loading repos...</option>
+        </select>
+      </div>
+
+      <div class="sidebar-section" id="repo-info-section">
+        <label class="sidebar-label">Repository Info</label>
+        <div class="repo-info-card">
+          <div class="repo-info-row">
+            <span class="info-icon">📁</span>
+            <span id="info-files">—</span> files indexed
+          </div>
+          <div class="repo-info-row">
+            <span class="info-icon">🧩</span>
+            <span id="info-chunks">—</span> code chunks
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <label class="sidebar-label">Ask About</label>
+        <div class="intent-chips">
+          <span class="chip" data-prompt="Give me an overview of this codebase">Overview</span>
+          <span class="chip" data-prompt="Explain the overall architecture">Architecture</span>
+          <span class="chip" data-prompt="How is authentication implemented?">Implementation</span>
+          <span class="chip" data-prompt="Where is the login feature located?">Locate</span>
+          <span class="chip" data-prompt="Help me debug the login issue">Debug</span>
+        </div>
+      </div>
+
+      <button class="sidebar-back-btn" id="back-to-index-btn">
+        ← Index Another Repo
+      </button>
+    </aside>
+
+    <!-- Chat Area -->
+    <main class="chat-main">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <h2 class="chat-title">Ask about <span id="chat-repo-label">your repository</span></h2>
+          <p class="chat-subtitle">Questions are classified by intent and answered with retrieved code context</p>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-area" id="messages-area">
+        <div class="welcome-message">
+          <div class="welcome-icon">🤖</div>
+          <h3>Ready to help!</h3>
+          <p>Select a repository and start asking questions about the codebase. I can explain architecture, trace implementations, locate files, and help debug issues.</p>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="chat-input-area">
+        <div class="input-wrapper">
+          <textarea
+            id="question-input"
+            class="question-textarea"
+            placeholder="Ask a question about the codebase..."
+            rows="1"
+          ></textarea>
+          <button id="send-btn" class="send-btn" title="Send (Enter)">
+            <span class="send-icon">↑</span>
+          </button>
+        </div>
+        <p class="input-footer">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Marked.js for Markdown rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
