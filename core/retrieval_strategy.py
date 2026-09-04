@@ -20,7 +20,7 @@ RETRIEVAL_STRATEGIES = {
         "preview_chunks": 2,
         "retrieve_chunks": False,
         "neighbor_expansion": False,
-        "chunks_per_file": 2,
+        "chunks_per_file": 3,
         "chunk_count": 0,
         "confidence_threshold": 4,
         "prompt_template": "overview"
