@@ -77,10 +77,6 @@ Select Repository : """
             if question.lower() == "exit":
                 print("Goodbye")
                 break
-            # target_modules = query_router.detect_target_modules(question)
-            # filtered_chunks = retrieval_filter.filter_chunks(chunks , target_modules)
-            # filtered_embedding_vectors = retrieval_filter.filter_embeddings(embedding_map , filtered_chunks)
-            # filtered_chunk_map = utils.build_chunkmap(filtered_chunks)
             question_type = question_classifier.question_classifier(question)
             print("question type : " , question_type)
             current_memory = memory.get_memory(repo_folder)
