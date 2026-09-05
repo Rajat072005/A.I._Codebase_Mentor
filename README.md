@@ -26,6 +26,7 @@ A.I. Codebase Mentor lets developers drop in any GitHub URL and immediately star
 The system is split into two independent pipelines that work in sequence: first the codebase is ingested and indexed, then the Q&A pipeline answers questions using that index.
 
 ![Pipeline Architecture Diagram](C:/Users/dhruv/.gemini/antigravity/brain/627c47a1-8fda-4928-888a-acef0d044e9f/pipeline_diagram.jpg)
+![alt text](image.png)
 
 ---
 
