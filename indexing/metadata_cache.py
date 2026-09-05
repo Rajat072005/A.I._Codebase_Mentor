@@ -20,7 +20,7 @@ from indexing import llm_metadata_generator
 CACHE_ROOT = "metadata_cache"
 
 
-def get_metadata(file_path, file_content, repo_root):
+def get_metadata(file_path, file_content, repo_root , repo_name):
     """
     Get metadata for a file — from cache if valid, or generate fresh.
 
@@ -33,7 +33,7 @@ def get_metadata(file_path, file_content, repo_root):
         A metadata dict with keys: purpose, responsibilities, concepts, keywords.
     """
     current_hash = _hash_content(file_content)
-    cache_path = _get_cache_path(file_path, repo_root)
+    cache_path = _get_cache_path(file_path, repo_root,repo_name)
     cached = _load_cache(cache_path)
 
     if cached is None:
@@ -58,14 +58,14 @@ def _hash_content(content):
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-def _get_cache_path(file_path, repo_root):
+def _get_cache_path(file_path, repo_root , repo_name):
     """
     Build the cache file path by mirroring the repo structure under metadata_cache/.
     Fix: repo_root is now dynamic instead of hardcoded.
     """
     relative = os.path.relpath(file_path, repo_root)
     base, _ = os.path.splitext(relative)
-    cache_path = os.path.join(CACHE_ROOT, base + ".json")
+    cache_path = os.path.join(CACHE_ROOT, repo_name,  base + ".json")
     return cache_path
 
 

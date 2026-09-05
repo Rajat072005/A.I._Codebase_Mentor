@@ -8,21 +8,24 @@ Exposes three endpoints for the frontend:
   POST /ask          → run the full Q&A pipeline and return an answer
 """
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
 from pathlib import Path
 
-from utils import storage
-from utils.helpers import build_chunkmap, build_embeddingmap
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+
+from core.confidence_handler import build_low_confidence_message, should_answer
+from core.context_builder import build_context
+from core.prompt_builder import build_prompt
 from core.question_classifier import classify_question
 from core.retrieval_strategy import get_strategy
 from core.strategy_executor import execute_strategy
-from core.context_builder import build_context
-from core.prompt_builder import build_prompt
-from core.confidence_handler import should_answer, build_low_confidence_message
+from live_index_routes import live_index_bp
 from llm.llm_explainer import generate_answer
+from utils import storage
+from utils.helpers import build_chunkmap, build_embeddingmap
 
-app = Flask(__name__, static_folder="frontend", static_url_path="")
+app = Flask(__name__, static_folder="frontend", static_url_path="")   
+app.register_blueprint(live_index_bp)
 CORS(app)
 
 DATA_DIR = Path("data")
@@ -78,6 +81,20 @@ def get_repos():
             if folder.is_dir() and (folder / "chunks.json").exists():
                 repos.append(folder.name)
     return jsonify(repos)
+
+@app.route("/repos/<repo_name>/stats", methods=["GET"])
+def get_repo_stats(repo_name):
+    """Return file/chunk counts for any already-indexed repo, by reading its chunks.json."""
+    folder = DATA_DIR / repo_name
+    chunks_path = folder / "chunks.json"
+    if not chunks_path.exists():
+        return jsonify({"error": "Repo not found."}), 404
+
+    chunks = storage.load_json(str(chunks_path))
+    return jsonify({
+        "file_count": len({c["path"] for c in chunks}),
+        "chunk_count": len(chunks),
+    })
 
 
 @app.route("/index", methods=["POST"])

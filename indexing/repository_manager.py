@@ -13,10 +13,12 @@ This is the single function called when a user wants to index a repo.
 
 import os
 import shutil
+
 from git import Repo
 
-from indexing import file_reader, chunker, embedding_generator
-from utils import storage, helpers
+from indexing import chunker, embedding_generator
+from indexing import file_reader_v2 as file_reader
+from utils import helpers, storage
 
 
 def reindex_repository(repo_url):
@@ -68,3 +70,9 @@ def reindex_repository(repo_url):
     storage.save_json(chunks, f"{repo_folder}/chunks.json")
     storage.save_json(embeddings, f"{repo_folder}/embeddings.json")
     print(f"Repository '{repo_name}' indexed successfully.")
+
+    return {
+        "repo_name": repo_name,
+        "file_count": len({c["path"] for c in chunks}),
+        "chunk_count": len(chunks),
+    }

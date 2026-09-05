@@ -1,52 +1,35 @@
 """
-File Reader
-------------
-Walks a cloned repository, reads all supported source files,
-and generates LLM metadata for each file (with caching).
+File Reader (batched)
+-----------------------
+Drop-in replacement for file_reader.py's read_repository(). Same
+walking/skip logic as the original — imported directly from
+file_reader.py so the skip rules live in exactly one place — but routes
+metadata generation through batch_indexer.py instead of calling
+metadata_cache.get_metadata() once per file.
 
-Skips:
-  - Common non-source folders (.git, node_modules, __pycache__, etc.)
-  - Lock files (package-lock.json, yarn.lock, etc.)
-  - Files without a supported extension
+file_reader.py itself is untouched. To switch over, change ONE import
+line wherever read_repository() is currently called (see the message
+this file was delivered with for the exact line).
+
+Return shape is identical to file_reader.read_repository(): a list of
+{path, knowledge_document, content} dicts — so chunker.py,
+embedding_generator.py, and everything downstream needs zero changes.
 """
 
 import os
-import time
-from indexing import llm_metadata_generator, metadata_cache, build_document , batch_indexer
+from indexing import build_document, batch_indexer
+from indexing.file_reader import SKIP_FOLDERS, ALLOWED_EXTENSIONS, IGNORE_FILES
 
-
-SKIP_FOLDERS = {".git", "node_modules", "__pycache__", "venv", "dist", "build"}
-
-ALLOWED_EXTENSIONS = {
-    ".py", ".js", ".jsx", ".ts", ".tsx",
-    ".css", ".html", ".json", ".md", ".txt"
-}
-
-IGNORE_FILES = {
-    "package-lock.json", "yarn.lock", "pnpm-lock.yaml",
-    ".config.js", "robot.json"
-}
+_EMPTY_METADATA = {"purpose": "", "responsibilities": [], "concepts": [], "keywords": []}
 
 
 # def read_repository(repo_path):
 #     """
-#     Walk a cloned repository and return a list of file dicts.
-
-#     Each file dict contains:
-#       path              : absolute file path
-#       knowledge_document : formatted metadata string
-#       content            : raw file content
-
-#     Args:
-#         repo_path : path to the cloned repository root
-
-#     Returns:
-#         List of file dicts ready for chunking.
+#     Same signature and return shape as file_reader.read_repository().
 #     """
-#     all_files = []
+#     raw_files = []
 
 #     for root, dirs, files in os.walk(repo_path):
-#         # Skip non-source folders in-place
 #         dirs[:] = [d for d in dirs if d not in SKIP_FOLDERS]
 
 #         for file in files:
@@ -62,30 +45,29 @@ IGNORE_FILES = {
 #             try:
 #                 with open(file_path, "r", encoding="utf-8") as f:
 #                     content = f.read()
-
-#                 # Get metadata from cache or generate fresh with Gemini
-#                 meta = metadata_cache.get_metadata(file_path, content, repo_path)
-#                 if meta is None:
-#                     meta = {
-#                         "purpose": "",
-#                         "responsibilities": [],
-#                         "concepts": [],
-#                         "keywords": []
-#                     }
-
-#                 knowledge_document = build_document.build_knowledge_document(meta)
-#                 all_files.append({
-#                     "path": file_path,
-#                     "knowledge_document": knowledge_document,
-#                     "content": content,
-#                 })
-
+#                 raw_files.append({"path": file_path, "content": content})
 #             except Exception as error:
 #                 print(f"  [skip] Could not read {file_path}: {error}")
 
-#     print(f"Total files read: {len(all_files)}")
-    
+#     print(f"Total files read: {len(raw_files)}")
+
+#     # This is the one call that replaces the old per-file
+#     # metadata_cache.get_metadata() loop — everything else above/below
+#     # is identical to file_reader.py.
+#     metadata_by_path = batch_indexer.get_metadata_for_repo(raw_files, repo_path)
+
+#     all_files = []
+#     for f in raw_files:
+#         meta = metadata_by_path.get(f["path"]) or dict(_EMPTY_METADATA)
+#         knowledge_document = build_document.build_knowledge_document(meta)
+#         all_files.append({
+#             "path": f["path"],
+#             "knowledge_document": knowledge_document,
+#             "content": f["content"],
+#         })
+
 #     return all_files
+
 
 def read_repository(repo_path):
     """

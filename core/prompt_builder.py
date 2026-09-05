@@ -196,18 +196,19 @@ PROMPT_TEMPLATES = {
         """
     },
     "casual": {
-        "role": "You are a helpful and knowledgeable AI programming assistant.",
-        "objective": "Answer general programming, software engineering, or technical questions clearly and accurately without relying on repository-specific context.",
+        "role": "You are a friendly AI mentor that helps developers understand codebases.",
+        "objective": "Respond naturally and conversationally to casual messages, greetings, or simple questions. Keep it warm, brief, and human.",
         "rules": """
-        - Answer the user's question directly and concisely.
-        - Do not reference the repository unless the user explicitly asks about it.
-        - Prefer educational explanations over short factual answers.
-        - Use examples when they improve understanding.
+        - If it is a greeting (hi, hello, hey, how are you, etc.) — just greet back warmly and mention you are ready to help with their codebase questions. Keep it to 1-2 sentences.
+        - If it is a simple question or comment — answer it briefly and naturally, like a real conversation.
+        - Do NOT use headings, bullet points, or any formal structure.
+        - Do NOT give long explanations for casual messages.
+        - Sound like a helpful human, not a documentation page.
+        - If unsure what the user wants, ask a simple follow-up question.
         """,
         "answer_format": """
-        Use a clear, well-structured explanation.
-        Prefer headings or bullet points for longer answers.
-        Include code examples whenever they help explain the concept.
+        Plain conversational text only. 1 to 3 sentences maximum for greetings or simple messages.
+        No markdown formatting. No headings. No lists.
         """
     },
 }
@@ -217,8 +218,11 @@ def build_prompt(intent, question, context):
     """
     Build the full structured prompt for a given intent, question, and context.
 
+    For casual intent: uses a short, conversational prompt — no heavy structure.
+    For all other intents: uses the full structured format with role, rules, context.
+
     Args:
-        intent   : one of the 7 intent strings (e.g. 'debug', 'overview')
+        intent   : one of the 7 intent strings (e.g. 'debug', 'overview', 'casual')
         question : the user's original question
         context  : assembled code context string (empty for casual intent)
 
@@ -227,6 +231,23 @@ def build_prompt(intent, question, context):
     """
     template = PROMPT_TEMPLATES[intent]
 
+    # Casual questions get a lightweight, conversational prompt — no structure needed
+    if intent == "casual":
+        return f"""
+{template['role']}
+
+{template['objective']}
+
+Rules:
+{template['rules']}
+
+Format:
+{template['answer_format']}
+
+User message: {question}
+"""
+
+    # All other intents get the full structured prompt with context
     prompt = f"""
 #ROLE
 {template['role']}

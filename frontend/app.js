@@ -118,7 +118,7 @@ async function runIndexingAnimation(url) {
 
 async function callIndexAPI(url) {
   try {
-    const res = await fetch(`${API}/index`, {
+    const res = await fetch(`${API}/index/live`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url })
@@ -186,21 +186,32 @@ repoSelector.addEventListener("change", () => {
   updateRepoInfo(currentRepo);
 });
 
-async function updateRepoInfo(repoName) {
-  // Quick index call for stats (won't reindex, just returns cached info)
-  try {
-    const knownUrls = {
-      "SyncSphere-Website":  "https://github.com/Rajat072005/SyncSphere-Website",
-      "LeetMetrics-WebApp":  "https://github.com/Rajat072005/LeetMetrics-WebApp",
-    };
-    const url = knownUrls[repoName];
-    if (!url) return;
+// async function updateRepoInfo(repoName) {
+//   // Quick index call for stats (won't reindex, just returns cached info)
+//   try {
+//     const knownUrls = {
+//       "SyncSphere-Website":  "https://github.com/Rajat072005/SyncSphere-Website",
+//       "LeetMetrics-WebApp":  "https://github.com/Rajat072005/LeetMetrics-WebApp",
+//     };
+//     const url = knownUrls[repoName];
+//     if (!url) return;
 
-    const res = await fetch(`${API}/index`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url })
-    });
+//     const res = await fetch(`${API}/index`, {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({ url })
+//     });
+//     const data = await res.json();
+//     if (!data.error) {
+//       infoFiles.textContent  = data.file_count  || "—";
+//       infoChunks.textContent = data.chunk_count || "—";
+//     }
+//   } catch { /* ignore */ }
+// }
+
+async function updateRepoInfo(repoName) {
+  try {
+    const res = await fetch(`${API}/repos/${encodeURIComponent(repoName)}/stats`);
     const data = await res.json();
     if (!data.error) {
       infoFiles.textContent  = data.file_count  || "—";
