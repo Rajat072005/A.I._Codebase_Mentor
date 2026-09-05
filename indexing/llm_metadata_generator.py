@@ -1,14 +1,16 @@
 """
 LLM Metadata Generator
-------------------------
-Calls Gemini to analyze a source file and generate structured metadata:
-  - purpose        : one sentence describing what this file does
-  - responsibilities : 3-5 high-level responsibilities
-  - concepts       : 3-6 software engineering concepts present
-  - keywords       : 5-10 retrieval-friendly keywords
+-----------------------
+Uses Gemini to generate rich semantic metadata for a single source code file.
 
-This metadata gets stored in the metadata cache and used to build
-knowledge documents, which dramatically improve retrieval quality.
+Metadata includes:
+  - purpose         : What the file does (1-2 sentences)
+  - responsibilities: 3-5 high-level responsibilities
+  - concepts        : 3-6 key software engineering concepts
+  - keywords        : 5-10 retrieval-friendly keywords
+
+This is the single-file fallback used by llm_metadata_batch_generator.py
+when a batch fails at the smallest granularity.
 """
 
 import json
@@ -19,34 +21,28 @@ from dotenv import load_dotenv
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-_model = genai.GenerativeModel("gemini-2.5-flash")
+_model = genai.GenerativeModel("gemini-3.6-flash")
 
 _PROMPT_TEMPLATE = """
 You are an expert software architect analyzing a source code file.
 
-Your task: generate structured metadata that will be used to improve
-semantic retrieval in an AI code understanding system.
+Generate structured metadata for the file below.
 
-Rules:
-1. Analyze only the provided file.
-2. Do not assume functionality that is not visible in the file.
-3. Focus on architectural understanding rather than line-by-line implementation.
-4. Keep every field concise but meaningful.
-5. The purpose must contain exactly one or two sentences.
-6. Responsibilities must contain between 3 and 5 high-level responsibilities.
-7. Concepts must contain between 3 and 6 important software engineering concepts.
-8. Keywords must contain between 5 and 10 retrieval-friendly keywords.
-9. Return only valid JSON. No markdown. No explanation outside the JSON.
-
-Output format:
+Return ONLY valid JSON (no markdown, no explanation) with this exact shape:
 {{
-    "purpose": "",
-    "responsibilities": [],
-    "concepts": [],
-    "keywords": []
+  "purpose": "one or two sentences describing what this file does",
+  "responsibilities": ["responsibility 1", "responsibility 2", "..."],
+  "concepts": ["concept 1", "concept 2", "..."],
+  "keywords": ["keyword1", "keyword2", "..."]
 }}
 
-Source Code:
+Rules:
+- purpose        : 1-2 sentences, architectural focus
+- responsibilities: 3-5 items, high-level only
+- concepts       : 3-6 software engineering concepts present in this file
+- keywords       : 5-10 retrieval-friendly terms a developer might search for
+
+Source code:
 
 {file_content}
 """
@@ -54,21 +50,23 @@ Source Code:
 
 def generate_llm_metadata(file_content):
     """
-    Generate structured metadata for a source file using Gemini.
-    Returns a dict or None if parsing fails.
+    Generate semantic metadata for a single source file using Gemini.
+
+    Args:
+        file_content : raw text content of the file
+
+    Returns:
+        A dict with keys: purpose, responsibilities, concepts, keywords.
     """
     prompt = _PROMPT_TEMPLATE.format(file_content=file_content)
-    raw_response = _model.generate_content(prompt).text
+    response = _model.generate_content(prompt)
 
-    # Strip markdown code fences if Gemini wraps the JSON
-    clean = raw_response.strip()
-    if clean.startswith("```json"):
-        clean = clean.replace("```json", "").replace("```", "").strip()
-    elif clean.startswith("```"):
-        clean = clean.replace("```", "").strip()
+    cleaned = response.text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`")
+        if cleaned.startswith("json"):
+            cleaned = cleaned[4:]
+        cleaned = cleaned.strip()
 
-    try:
-        return json.loads(clean)
-    except Exception as e:
-        print(f"Metadata parsing failed: {e}")
-        return None
+    return json.loads(cleaned)
+

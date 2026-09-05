@@ -15,7 +15,8 @@ MODEL_DIR = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-RANDOM_SEED = 42
+RANDOM_SEED = 42        
+
 
 def load_datasets():
     datasets = {}

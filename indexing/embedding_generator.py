@@ -17,15 +17,7 @@ _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 
 def generate_embeddings(chunks):
-    """
-    Generate embeddings for all chunks.
-
-    Args:
-        chunks : list of chunk dicts (output of chunker.create_chunks)
-
-    Returns:
-        List of embedding dicts: {id, code_embedding, repo_embedding}
-    """
+    
     embeddings = []
 
     for chunk in chunks:

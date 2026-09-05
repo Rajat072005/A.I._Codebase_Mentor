@@ -19,6 +19,7 @@ _embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 _classifier = joblib.load(_MODEL_DIR / "intent_classifier.pkl")
 _label_encoder = joblib.load(_MODEL_DIR / "label_encoder.pkl")
 
+    
 
 def classify_question(question: str) -> str:
     """

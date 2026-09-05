@@ -24,9 +24,9 @@ import time
 import random
 import google.generativeai as genai
 
-from indexing import llm_metadata_generator  # untouched — used as ground-truth fallback
+from indexing import llm_metadata_generator  
 
-_model = genai.GenerativeModel("gemini-2.5-flash")
+_model = genai.GenerativeModel("gemini-3.6-flash")
 
 # ── Tuning knobs ────────────────────────────────────────────────────────
 MAX_TOKENS_PER_BATCH = 6000     # rough char/4 budget per batch — keeps prompts safely sized
@@ -145,14 +145,7 @@ def _with_retry(fn, *args, **kwargs):
 
 
 def _generate_for_batch(files, on_result=None):
-    """
-    Try a batch as one call. If it fails after retries, bisect into two
-    smaller batches and recurse — down to single files, which reuse the
-    original generate_llm_metadata() as the final fallback.
-
-    on_result(path, metadata) fires immediately per file as results land,
-    so the caller can persist to cache without waiting for the whole run.
-    """
+    
     if len(files) == 1:
         f = files[0]
         try:
