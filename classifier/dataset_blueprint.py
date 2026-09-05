@@ -1,27 +1,27 @@
-# #FEATURES = [
+               
 
-#     "authentication",
-#     "login",
-#     "signup",
-#     "payment",
-#     "cart",
-#     "orders",
-#     "profile",
-#     "dashboard",
-#     "notifications",
-#     "search",
-#     "routing",
-#     "middleware",
-#     "API",
-#     "database",
-#     "cache",
-#     "state management",
-#     "configuration",
-#     "session management",
-#     "authorization",
-#     "request handling"
+                       
+              
+               
+                
+             
+               
+                
+                  
+                      
+               
+                
+                   
+            
+                 
+              
+                         
+                      
+                           
+                      
+                        
 
-# ]
+   
 OBJECT = [
     "project",
     "repository",
@@ -61,9 +61,9 @@ TECHNICAL_FEATURES = [
 FEATURES = BUSINESS_FEATURES + TECHNICAL_FEATURES
 
 INTENT_BLUEPRINT = {
-    # ==========================
-    # OVERVIEW
-    # ==========================
+                                
+              
+                                
     "overview": [
         {
             "pattern": "What does this {object} do?",
@@ -208,41 +208,41 @@ INTENT_BLUEPRINT = {
         {"pattern": "What makes this project useful?"},
         {"pattern": "Why would someone choose to use this application?"},
         {"pattern": "What value does this software provide?"},
-        # Family 12 — Repository Orientation
+                                            
         {"pattern": "Can you help me get oriented in this repository?"},
         {"pattern": "I'm unfamiliar with this codebase. Where do I begin?"},
         {
             "pattern": "Help me understand the overall structure before diving into the code."
         },
-        # Family 13 — Functional Perspective
+                                            
         {"pattern": "What is this application capable of doing?"},
         {"pattern": "What kind of tasks does this software perform?"},
         {"pattern": "What problems can users solve using this project?"},
-        # Family 14 — High-Level Workflow
+                                         
         {"pattern": "How does this application work at a high level?"},
         {"pattern": "Can you explain the overall workflow of this project?"},
         {"pattern": "What happens from start to finish when using this application?"},
-        # Family 15 — Repository Idfeature
+                                          
         {
             "pattern": "If you had to introduce this repository to someone, what would you say?"
         },
         {"pattern": "How would you describe this project to another developer?"},
         {"pattern": "What is the idfeature of this repository?"},
-        # Family 16 — Project Domain
+                                    
         {"pattern": "What domain does this application belong to?"},
         {"pattern": "What category of software is this project?"},
         {"pattern": "What type of application is this repository building?"},
-        # Family 17 — Overall Understanding
+                                           
         {
             "pattern": "Help me understand this repository before looking at the implementation."
         },
         {"pattern": "Explain the project without going into code details."},
         {"pattern": "Give me a conceptual understanding of this application."},
-        # Family 18 — First Impression
+                                      
         {"pattern": "What should I notice first about this repository?"},
         {"pattern": "What stands out about this project?"},
         {"pattern": "What is the first thing a developer should understand here?"},
-        # Family 19 — Repository Objective
+                                          
         {"pattern": "What is this repository trying to accomplish?"},
         {"pattern": "What is the end goal of this application?"},
         {"pattern": "What is the mission of this project?"},
@@ -250,9 +250,9 @@ INTENT_BLUEPRINT = {
         {"pattern": "Summarize this project for a technical lead."},
         {"pattern": "Provide a concise executive overview of this application."},
     ],
-    # ==========================
-    # ARCHITECTURE
-    # ==========================
+                                
+                  
+                                
     "architecture": [
         {
             "pattern": "Explain the architecture of this application.",
@@ -471,25 +471,25 @@ INTENT_BLUEPRINT = {
         },
         {
             "pattern": [
-                # Data flow across the system
+                                             
                 "How does data flow across {feature} and the rest of the system?",
                 "How does information move between {feature} and other features?",
                 "Describe how {feature} participates in the system's data flow.",
                 "How does data travel through the architecture involving {feature}?",
                 "What is the system-level data flow around {feature}?",
-                # Design decisions
+                                  
                 "What design decisions shape the architecture of {feature}?",
                 "Why was {feature} designed this way within the system?",
                 "What architectural choices influence {feature}?",
                 "What design principles define how {feature} fits into the application?",
                 "How do the design decisions around {feature} affect the overall system?",
-                # Responsibility separation
+                                           
                 "How are responsibilities separated around {feature}?",
                 "What responsibilities belong to {feature} compared with other parts of the system?",
                 "How does {feature} contribute to the separation of concerns?",
                 "How are responsibilities distributed between {feature} and other modules?",
                 "What architectural responsibility does {feature} have?",
-                # feature roles
+                               
                 "What role does {feature} serve in the system architecture?",
                 "Why does {feature} exist as a separate part of the application?",
                 "How does {feature} fit into the application's architectural design?",
@@ -500,9 +500,9 @@ INTENT_BLUEPRINT = {
             "category": "high_level_design",
         },
     ],
-    # ==========================
-    # IMPLEMENTATION
-    # ==========================
+                                
+                    
+                                
     "implementation": [
         {
             "pattern": "How is {feature} implemented?",
@@ -646,9 +646,9 @@ INTENT_BLUEPRINT = {
             "variables": {"feature": FEATURES},
         },
     ],
-    # ==========================
-    # LOCATE
-    # =========================
+                                
+            
+                               
     "locate": [
         {
             "category": "where",
@@ -854,19 +854,19 @@ INTENT_BLUEPRINT = {
         {
             "category": "startup_files",
             "pattern": [
-                # Locate code even when the target contains "implementation"
+                                                                            
                 "Point me to the implementation of {feature}.",
                 "Where can I find the implementation of {feature}?",
                 "Locate the implementation code for {feature}.",
                 "Show me where {feature} is implemented.",
                 "Which file contains the implementation of {feature}?",
-                # Locate internal logic
+                                       
                 "Where can I find the internal logic of {feature}?",
                 "Point me to the code behind {feature}.",
                 "Locate the logic responsible for {feature}.",
                 "Which file contains the logic for {feature}?",
                 "Show me where the internal code for {feature} is located.",
-                # Locate architecture/design-related code
+                                                         
                 "Where is the architecture for {feature} defined?",
                 "Point me to the code that defines the architecture of {feature}.",
                 "Which file defines the structure of {feature}?",
@@ -876,9 +876,9 @@ INTENT_BLUEPRINT = {
             "variables": {"feature": FEATURES},
         },
     ],
-    # ==========================
-    # COMPARISON
-    # =========================
+                                
+                
+                               
     "comparison": [
         {
             "category": "compare",
@@ -986,10 +986,10 @@ INTENT_BLUEPRINT = {
             "symmetric": True,
         },
     ],
-    # ==========================
-    # =========================
-    # DEBUG
-    # =========================
+                                
+                               
+           
+                               
     "debug": [
         {
             "category": "not_working",
@@ -1046,55 +1046,55 @@ INTENT_BLUEPRINT = {
             "pattern": "{feature} always fails.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 12 — Never
+                              
         {
             "category": "never",
             "pattern": "{feature} never works.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 13 — Doesn't
+                                
         {
             "category": "does_not",
             "pattern": "{feature} doesn't work anymore.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 14 — Stops
+                              
         {
             "category": "stops",
             "pattern": "{feature} suddenly stopped working.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 15 — Unexpected Output
+                                          
         {
             "category": "wrong_output",
             "pattern": "{feature} returns incorrect results.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 16 — Wrong Behaviour
+                                        
         {
             "category": "wrong_behaviour",
             "pattern": "{feature} behaves differently than expected.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 17 — Nothing Happens
+                                        
         {
             "category": "nothing_happens",
             "pattern": "Nothing happens when I use {feature}.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 18 — Stuck
+                              
         {
             "category": "stuck",
             "pattern": "{feature} gets stuck.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 19 — Infinite
+                                 
         {
             "category": "infinite",
             "pattern": "{feature} runs forever.",
             "variables": {"feature": FEATURES},
         },
-        #####Family 20 — Timeout
+                                
         {
             "category": "timeout",
             "pattern": "{feature} keeps timing out.",
@@ -1105,55 +1105,55 @@ INTENT_BLUEPRINT = {
             "pattern": "Why is {feature} throwing an exception?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 22 — Error
+                             
         {
             "category": "error",
             "pattern": "Why does {feature} throw an error?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 23 — Null
+                            
         {
             "category": "null",
             "pattern": "Why is {feature} returning null?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 24 — Undefined
+                                 
         {
             "category": "undefined",
             "pattern": "Why is {feature} returning undefined?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 25 — Missing
+                               
         {
             "category": "missing_data",
             "pattern": "Why is {feature} missing data?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 26 — Incorrect Data
+                                      
         {
             "category": "incorrect_data",
             "pattern": "Why is {feature} producing incorrect data?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 27 — Validation
+                                  
         {
             "category": "validation",
             "pattern": "Why is validation failing in {feature}?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 28 — API Failure
+                                   
         {
             "category": "api_failure",
             "pattern": "Why is the API failing in {feature}?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 29 — Request
+                               
         {
             "category": "request",
             "pattern": "Why does the request fail in {feature}?",
             "variables": {"feature": FEATURES},
         },
-        ####Family 30 — Response
+                                
         {
             "category": "response",
             "pattern": "Why is the response incorrect in {feature}?",
@@ -1164,93 +1164,93 @@ INTENT_BLUEPRINT = {
             "pattern": "Trace the execution of {feature}.",
             "variables": {"feature": FEATURES},
         },
-        ###Family 32 — Investigate
+                                  
         {
             "category": "investigation",
             "pattern": "Investigate the issue in {feature}.",
             "variables": {"feature": FEATURES},
         },
-        ###Family 33 — Root Cause
+                                 
         {
             "category": "root_cause_analysis",
             "pattern": "Help me identify the root cause in {feature}.",
             "variables": {"feature": FEATURES},
         },
-        ###Family 34 — Logging
+                              
         {
             "category": "logging",
             "pattern": "Where should I add logs to debug {feature}?",
             "variables": {"feature": FEATURES},
         },
-        ###Family 35 — State Investigation
+                                          
         {
             "category": "state",
             "pattern": "Help me investigate the state changes in {feature}.",
             "variables": {"feature": FEATURES},
         },
-        ###Family 36 — Bottleneck
+                                 
         {
             "category": "bottleneck",
             "pattern": "Find the bottleneck in {feature}.",
             "variables": {"feature": FEATURES},
         },
-        ###Family 37 — Performance Issue
+                                        
         {
             "category": "performance",
             "pattern": "Why is {feature} performing poorly?",
             "variables": {"feature": FEATURES},
         },
-        ###Family 38 — Race Condition
+                                     
         {
             "category": "race_condition",
             "pattern": "Could {feature} have a race condition?",
             "variables": {"feature": FEATURES},
         },
-        ###Family 39 — Memory Leak
+                                  
         {
             "category": "memory",
             "pattern": "Does {feature} have a memory leak?",
             "variables": {"feature": FEATURES},
         },
-        ###Family 40 — Reproduce
+                                
         {
             "category": "reproduce",
             "pattern": "Help me reproduce the bug in {feature}.",
             "variables": {"feature": FEATURES},
         },
     ],
-    # =========================
-    # CASUAL
-    # =========================
+                               
+            
+                               
     "casual": [
         {"category": "greeting", "pattern": "Hello"},
-        ##Family 2 — Hi
+                       
         {"category": "greeting", "pattern": "Hi"},
-        ##Family 3 — Good Morning
+                                 
         {"category": "greeting", "pattern": "Good morning"},
-        ##Family 4 — Goodbye
+                            
         {"category": "goodbye", "pattern": "Goodbye"},
-        ##Family 5 — Thanks
+                           
         {"category": "thanks", "pattern": "Thank you"},
-        ##Family 6 — Appreciation
+                                 
         {"category": "appreciation", "pattern": "That was helpful."},
-        ##Family 7 — Idfeature
+                              
         {"category": "idfeature", "pattern": "Who are you?"},
-        ##Family 8 — Capability
+                               
         {"category": "capability", "pattern": "What can you do?"},
-        ##Family 9 — Help
+                         
         {"category": "help", "pattern": "Can you help me?"},
-        ##Family 10 — Joke
+                          
         {"category": "joke", "pattern": "Tell me a joke."},
-        ##Family 11 — Confirmation
+                                  
         {"category": "confirmation", "pattern": "Okay"},
-        ##Family 12 — Acknowledgement
+                                     
         {"category": "acknowledgement", "pattern": "Got it."},
-        ##Family 13 — Nice
+                          
         {"category": "reaction", "pattern": "Nice!"},
-        ##Family 14 — How are you
+                                 
         {"category": "small_talk", "pattern": "How are you?"},
-        ##Family 15 — Bye
+                         
         {"category": "bye", "pattern": "See you later."},
         {
             "category": "greeting",

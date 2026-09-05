@@ -1,49 +1,24 @@
-"""
-Chunker
---------
-Splits source files into smaller, meaningful chunks for retrieval.
 
-Strategy per language:
-  - JS/TS/JSX/TSX : split on function/class/export/const boundaries
-  - Python         : split on def/class boundaries
-  - CSS            : split on closing brace boundaries
-  - Other          : fixed 1000-character windows
-"""
 
 import re
 from indexing import metadata_extractor
-
 
 def _split_js(content):
     pattern = r"(?=export\s+default\s+function|function\s|class\s|export\s+default|const\s+\w+\s*=\s*\()"
     chunks = re.split(pattern, content)
     return [c.strip() for c in chunks if c.strip()]
 
-
 def _split_python(content):
     pattern = r"(?=def\s|class\s)"
     chunks = re.split(pattern, content)
     return [c.strip() for c in chunks if c.strip()]
 
-
 def _split_css(content):
     chunks = content.split("}")
     return [c.strip() + "}" for c in chunks if c.strip()]
 
-
 def create_chunks(files):
-    """
-    Create chunks from a list of file dicts.
 
-    Each chunk dict contains:
-      id, path, chunk_id, module_type, file_type, knowledge_document, content
-
-    Args:
-        files : list of file dicts from file_reader.read_repository()
-
-    Returns:
-        A flat list of all chunk dicts across all files.
-    """
     all_chunks = []
 
     for file in files:

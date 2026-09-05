@@ -12,7 +12,6 @@ MODEL_DIR = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-
 def load_models():
 
     logistic_classifier = joblib.load(MODEL_DIR / "intent_classifier.pkl")
@@ -25,14 +24,12 @@ def load_models():
 
     return (logistic_classifier, knn_classifier, label_encoder, embedding_model)
 
-
 def load_dataset(filename):
 
     filepath = DATASET_DIR / filename
 
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
-
 
 def prepare_data(dataset):
 
@@ -41,7 +38,6 @@ def prepare_data(dataset):
     labels = [example["intent"] for example in dataset]
 
     return texts, labels
-
 
 def compare_predictions(texts, actual_labels, logistic_predictions, knn_predictions):
 
@@ -74,7 +70,6 @@ def compare_predictions(texts, actual_labels, logistic_predictions, knn_predicti
             )
     return (both_correct, logistic_only_correct, knn_only_correct, both_wrong)
 
-
 def show_examples(title, examples):
 
     print("\n" + "=" * 70)
@@ -90,7 +85,6 @@ def show_examples(title, examples):
         print(f"Actual   : {example['actual']}")
         print(f"Logistic : {example['logistic']}")
         print(f"KNN      : {example['knn']}")
-
 
 def main():
     (logistic_classifier, knn_classifer, label_encoder, embedding_model) = load_models()
@@ -111,9 +105,9 @@ def main():
         compare_predictions(texts, actual_labels, logistic_predictions, knn_predictions)
     )
 
-    # ----------------------------------------
-    # SUMMARY
-    # ----------------------------------------
+                                              
+             
+                                              
 
     print("\n" + "=" * 70)
     print("MODEL COMPARISON SUMMARY")
@@ -127,16 +121,15 @@ def main():
 
     print(f"Both Wrong             : {len(both_wrong)}")
 
-    # ----------------------------------------
-    # SHOW INTERESTING CASES
-    # ----------------------------------------
+                                              
+                            
+                                              
 
     show_examples("ONLY LOGISTIC REGRESSION CORRECT", logistic_only_correct)
 
     show_examples("ONLY KNN CORRECT", knn_only_correct)
 
     show_examples("BOTH MODELS WRONG", both_wrong)
-
 
 if __name__ == "__main__":
     main()

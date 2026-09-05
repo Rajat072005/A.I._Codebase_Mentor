@@ -21,9 +21,8 @@ choice = input(
 Enter Your Choice : """
 )
 
-
 if(choice == "1"):
-    # repo_url = "https://github.com/Rajat072005/SyncSphere-Website"
+                                                                    
     repo_url_input = input(
         "Provide the repository url : "
     )
@@ -111,25 +110,25 @@ Select Repository : """
                 if confidence_handler._should_answer(top_score):
                     context = context_builder.build_context(chunk_map , context_chunks)
                     prompt = prompt_builder.build_prompt(intent , question , context)
-                    # answer
-                    # print(answer) 
+                            
+                                    
                 else:
                     answer = confidence_handler.build_low_confidence_message(question)
                     print(answer)
 
-            # for index, result in enumerate(semantic_results, start=1):
-            #         print(f"Retrieved File from semantic results {index}: {result['path']}")
+                                                                        
+                                                                                              
             
-            # for index, result in enumerate(keyword_results, start=1):
-            #         print(f"Retrieved File from keyword results  {index}: {result['path']}")
+                                                                       
+                                                                                              
 
-            # for index, result in enumerate(merged_results, start=1):
-            #         print(f"Retrieved File from merged results with rrf {index}: {result['path']}",
-            #               f"rrf score of result {index} : {result['rrf_score']}")
-            # for index, result in enumerate(reranked_results, start=1):
-            #         print(f"Retrieved File from reranked results {index}: {result['path']}")
+                                                                      
+                                                                                                     
+                                                                                   
+                                                                        
+                                                                                              
 
             
             
-            # memory.update_memory(repo_folder , question , question_type , reranked_results , answer)
+                                                                                                      
 

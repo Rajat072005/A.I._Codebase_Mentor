@@ -2,7 +2,6 @@ import json
 import random
 from collections import Counter
 
-
 def load_dataset():
 
     with open(
@@ -19,7 +18,6 @@ def dataset_size(dataset):
 
     return len(dataset)
 
-
 def intent_distribution(dataset):
 
     intents = []
@@ -33,7 +31,6 @@ def intent_distribution(dataset):
     distribution = Counter(intents)
 
     return distribution
-
 
 def duplicate_count(dataset):
 
@@ -58,7 +55,6 @@ def duplicate_count(dataset):
 
     return duplicates
 
-
 def question_length_statistics(dataset):
 
     lengths = []
@@ -81,7 +77,6 @@ def question_length_statistics(dataset):
         )
 
     }
-
 
 def random_samples(dataset, sample_count=5):
 
@@ -115,7 +110,6 @@ def random_samples(dataset, sample_count=5):
         for sample in samples:
 
             print(f"• {sample}")
-
 
 def analyze_dataset():
 
@@ -157,7 +151,6 @@ def analyze_dataset():
     print("\nRandom Samples")
 
     random_samples(dataset)
-
 
 if __name__ == "__main__":
 

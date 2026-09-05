@@ -1,17 +1,4 @@
-"""
-LLM Metadata Generator
------------------------
-Uses Gemini to generate rich semantic metadata for a single source code file.
 
-Metadata includes:
-  - purpose         : What the file does (1-2 sentences)
-  - responsibilities: 3-5 high-level responsibilities
-  - concepts        : 3-6 key software engineering concepts
-  - keywords        : 5-10 retrieval-friendly keywords
-
-This is the single-file fallback used by llm_metadata_batch_generator.py
-when a batch fails at the smallest granularity.
-"""
 
 import json
 import os
@@ -47,17 +34,8 @@ Source code:
 {file_content}
 """
 
-
 def generate_llm_metadata(file_content):
-    """
-    Generate semantic metadata for a single source file using Gemini.
 
-    Args:
-        file_content : raw text content of the file
-
-    Returns:
-        A dict with keys: purpose, responsibilities, concepts, keywords.
-    """
     prompt = _PROMPT_TEMPLATE.format(file_content=file_content)
     response = _model.generate_content(prompt)
 

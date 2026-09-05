@@ -1,20 +1,9 @@
-"""
-Embedding Generator
---------------------
-Generates two types of vector embeddings for each chunk using
-sentence-transformers (all-MiniLM-L6-v2):
 
-  - code_embedding  : from knowledge_document + raw code
-                      → used for chunk-level semantic search
-  - repo_embedding  : from knowledge_document only
-                      → used for file-level semantic search
-"""
 
 from sentence_transformers import SentenceTransformer
 from indexing import build_document
 
 _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
 
 def generate_embeddings(chunks):
     

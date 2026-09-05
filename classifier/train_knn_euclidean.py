@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import joblib
-import numpy as np  # noqa: F401
+import numpy as np              
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.neighbors import KNeighborsClassifier
@@ -26,7 +26,6 @@ test_labels = [item["intent"] for item in test_data]
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
-
 train_embeddings = embedding_model.encode(
     train_texts,
     show_progress_bar=True
@@ -38,7 +37,6 @@ test_embeddings = embedding_model.encode(
 )
 
 knn_classifier = KNeighborsClassifier(n_neighbors=5 , metric="euclidean")
-
 
 knn_classifier.fit(
     train_embeddings,
@@ -62,5 +60,4 @@ print(
 joblib.dump(knn_classifier , MODEL_DIR / "knn_euclidean_classifier.pkl")
 
 print("\nKNN model saved successfully!")
-
 

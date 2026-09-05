@@ -39,7 +39,7 @@ def balance_dataset(grouped_datset):
 
     balanced_dataset = []
 
-    for intent , examples in grouped_datset.items():  # noqa: PERF102
+    for intent , examples in grouped_datset.items():                 
         if(len(examples) > MAX_PER_INTENT):
             selected_examples = random.sample(examples , MAX_PER_INTENT)
         else:
@@ -85,7 +85,6 @@ def save_dataset(train_dataset, validation_dataset, test_dataset):
             json.dump(dataset, f, indent=4)
 
     print("\nProcessed datasets saved successfully!")
-
 
 def clean_dataset():
 

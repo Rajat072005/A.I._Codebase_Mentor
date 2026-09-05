@@ -11,7 +11,6 @@ DATASET_DIR = BASE_DIR / "datasets" / "processed"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-
 def load_dataset(filename):
 
     filepath = DATASET_DIR / filename
@@ -19,14 +18,12 @@ def load_dataset(filename):
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
 
-
 def prepare_data(dataset):
 
     texts = [example["text"] for example in dataset]
     labels = [example["intent"] for example in dataset]
 
     return texts, labels
-
 
 def main():
 
@@ -48,76 +45,71 @@ def main():
         validation_texts, show_progress_bar=True
     )
 
-    # k_values = [1, 3, 5, 7, 9, 11, 15]
+                                        
 
     print("\n" + "=" * 60)
     print("KNN HYPERPARAMETER TUNING")
     print("=" * 60)
 
-    # for k in k_values:
+                        
 
-    #     knn_classifier = KNeighborsClassifier(
-    #         n_neighbors=k,
-    #         metric="cosine"
-    #     )
+                                                
+                            
+                             
+           
 
-    #     knn_classifier.fit(
-    #         train_embeddings,
-    #         train_labels
-    #     )
+                             
+                               
+                          
+           
 
-    #     predictions = knn_classifier.predict(
-    #         validation_embeddings
-    #     )
+                                               
+                                   
+           
 
-    #     accuracy = accuracy_score(
-    #         validation_labels,
-    #         predictions
-    #     )
+                                    
+                                
+                         
+           
 
-    #     print(
-    #         f"k = {k:<2} → Validation Accuracy: {accuracy:.4f}"
-    #     )
+                
+                                                                 
+           
 
     print("\n" + "=" * 60)
     print("KNN WEIGHT TUNING")
     print("=" * 60)
 
-    # for weight in ["uniform", "distance"]:
-    #     knn_classifier = KNeighborsClassifier(
-    #         n_neighbors=3, metric="cosine", weights=weight
-    #     )
+                                            
+                                                
+                                                            
+           
 
-    #     knn_classifier.fit(train_embeddings, train_labels)
+                                                            
 
-    #     predictions = knn_classifier.predict(validation_embeddings)
+                                                                     
 
-    #     accuracy = accuracy_score(validation_labels, predictions)
+                                                                   
 
-    #     print(f"weights = {weight:<8} → Validation Accuracy: {accuracy:.4f}")
+                                                                               
 
     uniform_classifier = KNeighborsClassifier(
         n_neighbors=3, metric="cosine", weights="uniform"
     )
 
-
     distance_classifier = KNeighborsClassifier(
         n_neighbors=3, metric="cosine", weights="distance"
     )   
-
 
     uniform_classifier.fit(train_embeddings, train_labels)
 
     distance_classifier.fit(train_embeddings, train_labels)
 
-
     uniform_predictions = uniform_classifier.predict(validation_embeddings)
 
     distance_predictions = distance_classifier.predict(validation_embeddings)
 
-
     different_predictions = 0
-
 
     for text , actual ,uniform_prediction, distance_prediction in zip(
         validation_texts , validation_labels ,uniform_predictions, distance_predictions
@@ -138,13 +130,11 @@ def main():
                 else:
                     print("Winner: Neither")
 
-
     print("\n" + "=" * 60)
     print("UNIFORM VS DISTANCE PREDICTION COMPARISON")
     print("=" * 60)
 
     print(f"\nDifferent Predictions: {different_predictions}")
-
 
 if __name__ == "__main__":
     main()

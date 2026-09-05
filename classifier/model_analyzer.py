@@ -13,7 +13,6 @@ MODEL_DIR = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-
 def load_models():
     classifier = joblib.load(
         MODEL_DIR / "intent_classifier.pkl"
@@ -57,7 +56,6 @@ def decode_labels(predictions , label_encoder):
     return label_encoder.inverse_transform(predictions)
 
 def show_errors(texts ,actual_labels , predicted_labels , probabilities , classifier,label_encoder):
-
 
     print("\n" + "=" * 60)
     print("INCORRECT PREDICTIONS")
@@ -166,6 +164,4 @@ def main():
 if __name__ == "__main__":
     main()
         
-
-
 

@@ -1,23 +1,4 @@
-"""
-LLM Metadata Batch Generator
------------------------------
-Batched version of llm_metadata_generator.py.
 
-Instead of one Gemini call per file, groups several files into a single
-call (respecting a rough token budget) and asks for metadata on all of
-them at once, returned as a JSON array. This is what actually fixes the
-rate-limit problem: fewer calls, not smarter waiting.
-
-If a batch call fails (rate limit, malformed output, size mismatch) after
-retries, it is bisected into two smaller batches and retried recursively,
-all the way down to single files if needed. At single-file granularity it
-falls back to the ORIGINAL, untouched llm_metadata_generator.py — so the
-prompt and quality for any file that needs individual handling is exactly
-what you already had. Batching only changes call volume, never quality.
-
-Nothing in this file is imported by your existing modules, so it cannot
-break anything until you wire it in yourself (see batch_indexer.py).
-"""
 
 import json
 import time
@@ -28,11 +9,11 @@ from indexing import llm_metadata_generator
 
 _model = genai.GenerativeModel("gemini-3.6-flash")
 
-# ── Tuning knobs ────────────────────────────────────────────────────────
-MAX_TOKENS_PER_BATCH = 6000     # rough char/4 budget per batch — keeps prompts safely sized
-MAX_FILES_PER_BATCH = 10        # hard cap regardless of token budget
-MAX_RETRIES = 5                 # per batch/file, before bisecting or giving up
-BATCH_DELAY_SECONDS = 3         # small courtesy delay after each successful batch call
+                                                                          
+MAX_TOKENS_PER_BATCH = 6000                                                                 
+MAX_FILES_PER_BATCH = 10                                             
+MAX_RETRIES = 5                                                                
+BATCH_DELAY_SECONDS = 3                                                                
 
 _BATCH_PROMPT_TEMPLATE = """
 You are an expert software architect analyzing multiple source code files
@@ -62,16 +43,11 @@ Files:
 {files_block}
 """
 
-
 def _estimate_tokens(text):
-    return max(1, len(text) // 4)  # rough heuristic: ~4 chars per token
-
+    return max(1, len(text) // 4)                                       
 
 def build_batches(files):
-    """
-    Group files into token-budget-aware batches.
-    `files` is a list of {"path": ..., "content": ...} dicts (cache misses only).
-    """
+
     batches = []
     current, current_tokens = [], 0
 
@@ -91,12 +67,8 @@ def build_batches(files):
 
     return batches
 
-
 def _call_gemini_batch(files):
-    """
-    Single Gemini call for a batch of files. Returns a parsed, validated
-    JSON list, or raises — caller decides whether to retry/bisect.
-    """
+
     files_block = "\n\n".join(
         f"--- FILE: {f['path']} ---\n{f['content']}" for f in files
     )
@@ -108,15 +80,15 @@ def _call_gemini_batch(files):
     )
     raw = response.text.strip()
 
-    # Defensive cleanup — some SDK/model combos still wrap output in fences
-    # occasionally even with response_mime_type set.
+                                                                           
+                                                    
     if raw.startswith("```"):
         raw = raw.strip("`")
         if raw.startswith("json"):
             raw = raw[4:]
         raw = raw.strip()
 
-    parsed = json.loads(raw)  # let this raise on malformed JSON — caller handles it
+    parsed = json.loads(raw)                                                        
 
     if not isinstance(parsed, list) or len(parsed) != len(files):
         got = len(parsed) if isinstance(parsed, list) else "non-list"
@@ -129,9 +101,8 @@ def _call_gemini_batch(files):
 
     return parsed
 
-
 def _with_retry(fn, *args, **kwargs):
-    """Exponential backoff + jitter. Retries on rate limits, transient errors, or bad output."""
+
     last_error = None
     for attempt in range(MAX_RETRIES):
         try:
@@ -142,7 +113,6 @@ def _with_retry(fn, *args, **kwargs):
             print(f"  [retry {attempt + 1}/{MAX_RETRIES}] {e} — waiting {wait:.1f}s")
             time.sleep(wait)
     raise last_error
-
 
 def _generate_for_batch(files, on_result=None):
     
@@ -179,16 +149,8 @@ def _generate_for_batch(files, on_result=None):
         right = _generate_for_batch(files[mid:], on_result=on_result)
         return {**left, **right}
 
-
 def generate_metadata_for_files(files, on_result=None):
-    """
-    Public entry point. `files` = list of {"path", "content"} dicts
-    (already-filtered cache misses). Returns {path: metadata_dict}.
 
-    Pass on_result to get a callback the moment each file's metadata is
-    ready — this is what makes a run resumable: a crash or exhausted
-    quota mid-run only loses the files not yet completed.
-    """
     all_results = {}
     for batch in build_batches(files):
         all_results.update(_generate_for_batch(batch, on_result=on_result))

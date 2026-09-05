@@ -1,15 +1,4 @@
-"""
-Prompt Builder
---------------
-Builds structured LLM prompts by combining:
-  - A role definition (who Gemini is pretending to be)
-  - An objective (what it should do)
-  - Rules specific to the intent type
-  - Global rules that apply to every prompt
-  - An answer format guideline
-  - The user's question
-  - The retrieved code context
-"""
+
 
 GLOBAL_RULES = """
 You must answer ONLY using the retrieved repository context.
@@ -213,25 +202,11 @@ PROMPT_TEMPLATES = {
     },
 }
 
-
 def build_prompt(intent, question, context):
-    """
-    Build the full structured prompt for a given intent, question, and context.
 
-    For casual intent: uses a short, conversational prompt — no heavy structure.
-    For all other intents: uses the full structured format with role, rules, context.
-
-    Args:
-        intent   : one of the 7 intent strings (e.g. 'debug', 'overview', 'casual')
-        question : the user's original question
-        context  : assembled code context string (empty for casual intent)
-
-    Returns:
-        A formatted prompt string ready to be sent to the LLM.
-    """
     template = PROMPT_TEMPLATES[intent]
 
-    # Casual questions get a lightweight, conversational prompt — no structure needed
+                                                                                     
     if intent == "casual":
         return f"""
 {template['role']}
@@ -247,23 +222,19 @@ Format:
 User message: {question}
 """
 
-    # All other intents get the full structured prompt with context
+                                                                   
     prompt = f"""
 #ROLE
 {template['role']}
 
-
 #OBJECTIVE
 {template['objective']}
-
 
 #RULES
 {template['rules']}
 
-
 #GLOBAL RULES
 {GLOBAL_RULES}
-
 
 #ANSWER FORMAT
 {template['answer_format']}

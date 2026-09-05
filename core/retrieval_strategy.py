@@ -1,17 +1,4 @@
-"""
-Retrieval Strategy Config
---------------------------
-Defines HOW to retrieve context for each question intent.
-Each strategy controls:
-  - retrieve_files         : how many top files to fetch first
-  - preview_chunks         : how many leading chunks to include (preview mode)
-  - retrieve_chunks        : True = deep chunk retrieval, False = preview mode
-  - neighbor_expansion     : include adjacent chunks around retrieved ones
-  - chunks_per_file        : (unused in v1, reserved)
-  - chunk_count            : how many final chunks to retrieve
-  - confidence_threshold   : min Gemini reranker score (1-10) to answer
-  - prompt_template        : which prompt template to use
-"""
+
 
 RETRIEVAL_STRATEGIES = {
 
@@ -93,7 +80,6 @@ RETRIEVAL_STRATEGIES = {
     },
 }
 
-
 def get_strategy(intent: str) -> dict:
-    """Return the retrieval strategy for a given intent."""
+
     return RETRIEVAL_STRATEGIES[intent]

@@ -4,10 +4,8 @@ from itertools import product
 
 from dataset_blueprint import INTENT_BLUEPRINT
 
-
 def load_blueprint():
     return INTENT_BLUEPRINT
-
 
 def generate_examples(blueprint):
     examples = []
@@ -17,7 +15,6 @@ def generate_examples(blueprint):
             generated_examples = expand_template(template , intent)
             examples.extend(generated_examples)
     return examples
-
 
 def expand_template(template, intent):
     generated_examples = []
@@ -68,7 +65,6 @@ def expand_template(template, intent):
             )
     return generated_examples
 
-
 def remove_duplicates(dataset):
 
     seen = set()
@@ -87,13 +83,11 @@ def remove_duplicates(dataset):
 
     return unique_examples
 
-
 def shuffle_dataset(dataset):
 
     random.shuffle(dataset)
 
     return dataset
-
 
 def save_dataset(dataset):
 
@@ -110,7 +104,6 @@ def save_dataset(dataset):
             ensure_ascii=False
         )
 
-
 def generate_dataset():
 
     blueprint = load_blueprint()
@@ -124,7 +117,6 @@ def generate_dataset():
     save_dataset(dataset)
 
     print(f"Generated {len(dataset)} examples.")
-
 
 if __name__ == "__main__":
     generate_dataset()

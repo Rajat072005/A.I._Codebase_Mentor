@@ -17,7 +17,6 @@ EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
 RANDOM_SEED = 42        
 
-
 def load_datasets():
     datasets = {}
 
@@ -160,7 +159,6 @@ def main():
         classifier,
         label_encoder
     )
-
 
 if __name__ == "__main__":
     main()

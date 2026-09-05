@@ -13,7 +13,6 @@ MODEL_DIR = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-
 def load_models():
 
     logistic_classifier = joblib.load(MODEL_DIR / "intent_classifier.pkl")
@@ -26,14 +25,12 @@ def load_models():
 
     return (logistic_classifier, knn_classifier, label_encoder, embedding_model)
 
-
 def load_dataset(filename):
 
     filepath = DATASET_DIR / filename
 
     with open(filepath, "r", encoding="utf-8") as file:
         return json.load(file)
-
 
 def prepare_data(dataset):
 
@@ -42,7 +39,6 @@ def prepare_data(dataset):
     labels = [example["intent"] for example in dataset]
 
     return texts, labels
-
 
 def analyze_logistic_confidence(texts, actual_labels, predicted_labels, probabilities):
     correct_confidences = []
@@ -105,9 +101,6 @@ def analyze_logistic_confidence(texts, actual_labels, predicted_labels, probabil
     for confidence in sorted_correct[:10]:
         print(f"{confidence:.4f}")
 
-
-
-
 def main():
     (logistic_classifier, knn_classifier, label_encoder, embedding_model) = (
         load_models()
@@ -139,7 +132,6 @@ def main():
     print(f"\nLogistic Regression Accuracy: {logistic_accuracy:.4f}")
 
     print(f"KNN Accuracy: {knn_accuracy:.4f}")
-
 
 if __name__ == "__main__":
     main()

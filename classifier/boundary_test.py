@@ -30,12 +30,11 @@ def main():
 
     classifier, label_encoder, embedding_model = load_models()
 
-
     questions = [
 
-        # ==========================================
-        # ARCHITECTURE
-        # ==========================================
+                                                    
+                      
+                                                    
 
         "How does authentication connect to the API?",
         "How does authentication fit into the overall system?",
@@ -43,10 +42,9 @@ def main():
         "What role does authentication play in the application?",
         "How does authentication data flow through the system?",
 
-
-        # ==========================================
-        # IMPLEMENTATION
-        # ==========================================
+                                                    
+                        
+                                                    
 
         "How does authentication process credentials internally?",
         "What happens internally when authentication runs?",
@@ -54,10 +52,9 @@ def main():
         "What steps does authentication perform internally?",
         "How is the authentication logic executed?",
 
-
-        # ==========================================
-        # LOCATE
-        # ==========================================
+                                                    
+                
+                                                    
 
         "Where is authentication implemented?",
         "Which file contains the authentication logic?",
@@ -66,7 +63,6 @@ def main():
         "Point me to the authentication implementation."
     ]
 
-
     predictions = predict_questions(
         questions,
         classifier,
@@ -74,11 +70,9 @@ def main():
         embedding_model
     )
 
-
     print("\n" + "=" * 70)
     print("BOUNDARY TEST")
     print("=" * 70)
-
 
     for question, prediction in zip(
         questions,
@@ -87,7 +81,6 @@ def main():
 
         print(f"\nQuestion : {question}")
         print(f"Predicted: {prediction}")
-
 
 if __name__ == "__main__":
     main()

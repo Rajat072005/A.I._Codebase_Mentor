@@ -5,13 +5,11 @@ from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
-
 BASE_DIR = Path(__file__).resolve().parent
 
 DATASET_DIR = BASE_DIR / "datasets" / "processed"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
-
 
 def load_dataset(filename):
 
@@ -19,7 +17,6 @@ def load_dataset(filename):
 
     with open(filepath, "r", encoding="utf-8") as f:
         return json.load(f)
-
 
 def prepare_data(dataset):
 
@@ -35,12 +32,11 @@ def prepare_data(dataset):
 
     return texts, labels
 
-
 def main():
 
-    # ----------------------------------------
-    # 1. LOAD TRAINING AND VALIDATION DATA
-    # ----------------------------------------
+                                              
+                                          
+                                              
 
     train_data = load_dataset("train.json")
     validation_data = load_dataset("validation.json")
@@ -53,19 +49,17 @@ def main():
         validation_data
     )
 
-
-    # ----------------------------------------
-    # 2. LOAD EMBEDDING MODEL
-    # ----------------------------------------
+                                              
+                             
+                                              
 
     embedding_model = SentenceTransformer(
         EMBEDDING_MODEL
     )
 
-
-    # ----------------------------------------
-    # 3. CREATE EMBEDDINGS ONCE
-    # ----------------------------------------
+                                              
+                               
+                                              
 
     print("Creating training embeddings...")
 
@@ -74,7 +68,6 @@ def main():
         show_progress_bar=True
     )
 
-
     print("\nCreating validation embeddings...")
 
     validation_embeddings = embedding_model.encode(
@@ -82,10 +75,9 @@ def main():
         show_progress_bar=True
     )
 
-
-    # ----------------------------------------
-    # 4. DEFINE HYPERPARAMETERS
-    # ----------------------------------------
+                                              
+                               
+                                              
 
     k_values = [1, 3, 5, 7, 9, 11, 15]
 
@@ -99,22 +91,19 @@ def main():
         "euclidean"
     ]
 
-
-    # ----------------------------------------
-    # 5. STORE RESULTS
-    # ----------------------------------------
+                                              
+                      
+                                              
 
     results = []
-
 
     print("\n" + "=" * 75)
     print("KNN GRID SEARCH")
     print("=" * 75)
 
-
-    # ----------------------------------------
-    # 6. TEST EVERY COMBINATION
-    # ----------------------------------------
+                                              
+                               
+                                              
 
     for k in k_values:
 
@@ -128,23 +117,19 @@ def main():
                     metric=metric
                 )
 
-
                 knn_classifier.fit(
                     train_embeddings,
                     train_labels
                 )
 
-
                 predictions = knn_classifier.predict(
                     validation_embeddings
                 )
-
 
                 accuracy = accuracy_score(
                     validation_labels,
                     predictions
                 )
-
 
                 result = {
                     "k": k,
@@ -153,9 +138,7 @@ def main():
                     "accuracy": accuracy
                 }
 
-
                 results.append(result)
-
 
                 print(
                     f"k={k:<2} | "
@@ -164,25 +147,22 @@ def main():
                     f"accuracy={accuracy:.4f}"
                 )
 
-
-    # ----------------------------------------
-    # 7. SORT RESULTS
-    # ----------------------------------------
+                                              
+                     
+                                              
 
     results.sort(
         key=lambda result: result["accuracy"],
         reverse=True
     )
 
-
-    # ----------------------------------------
-    # 8. SHOW TOP CONFIGURATIONS
-    # ----------------------------------------
+                                              
+                                
+                                              
 
     print("\n" + "=" * 75)
     print("TOP KNN CONFIGURATIONS")
     print("=" * 75)
-
 
     for rank, result in enumerate(results[:10], start=1):
 
@@ -205,7 +185,6 @@ def main():
         print(
             f"accuracy : {result['accuracy']:.4f}"
         )
-
 
 if __name__ == "__main__":
     main()

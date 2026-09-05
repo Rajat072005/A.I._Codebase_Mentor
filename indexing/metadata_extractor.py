@@ -1,12 +1,6 @@
-"""
-Metadata Extractor
--------------------
-Detects the module type and file type of a source file based on its path.
-Used to tag each chunk with structural metadata for filtering purposes.
-"""
 
 
-# Map folder name → module type label
+                                     
 MODULE_KEYWORDS = {
     "pages": "page",
     "components": "component",
@@ -22,14 +16,8 @@ MODULE_KEYWORDS = {
     "middlewares": "backend",
 }
 
-
 def detect_module_type(path):
-    """
-    Detect the module type and file extension from a file path.
 
-    Returns:
-        (module_type, file_type) — e.g. ('component', 'jsx')
-    """
     normalized = path.replace("\\", "/").lower()
     parts = normalized.split("/")
     file_name = parts[-1]

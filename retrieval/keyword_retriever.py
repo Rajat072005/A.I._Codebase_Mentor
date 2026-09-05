@@ -1,27 +1,10 @@
-"""
-Keyword Retriever (TF-IDF)
----------------------------
-Retrieves relevant chunks or files using TF-IDF cosine similarity.
-Works alongside the semantic retriever — together they form the hybrid retrieval system.
-"""
+
 
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-
 def retrieve(question, documents, source_objects, top_k=3):
-    """
-    Retrieve the top-K most relevant objects using TF-IDF keyword matching.
 
-    Args:
-        question       : user's question string
-        documents      : list of text strings (one per source object)
-        source_objects : list of chunk or file dicts (parallel to documents)
-        top_k          : number of unique results to return
-
-    Returns:
-        List of source_object dicts ranked by keyword relevance.
-    """
     if not documents:
         return []
 

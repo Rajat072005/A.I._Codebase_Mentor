@@ -26,7 +26,6 @@ test_labels = [item["intent"] for item in test_data]
 
 embedding_model = SentenceTransformer(EMBEDDING_MODEL)
 
-
 train_embeddings = embedding_model.encode(
     train_texts,
     show_progress_bar=True
@@ -38,7 +37,6 @@ test_embeddings = embedding_model.encode(
 )
 
 knn_classifier = KNeighborsClassifier(n_neighbors=15 , metric="cosine" , weights="distance")
-
 
 knn_classifier.fit(
     train_embeddings,
@@ -62,5 +60,4 @@ print(
 joblib.dump(knn_classifier , MODEL_DIR / "knn_tuned_classifier.pkl")
 
 print("\nKNN tuned model saved successfully!")
-
 

@@ -13,7 +13,6 @@ MODEL_DIR = BASE_DIR / "models"
 
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
-
 def load_models():
     classifier = joblib.load(MODEL_DIR / "knn_euclidean_classifier.pkl")
 
@@ -165,7 +164,6 @@ def main():
         predicted_labels,
         classifier
     )
-
 
 if __name__ == "__main__":
     main()
