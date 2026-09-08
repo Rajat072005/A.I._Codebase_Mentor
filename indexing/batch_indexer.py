@@ -41,3 +41,4 @@ def get_metadata_for_repo(files, repo_root , repo_name):
         results[path] = metadata if metadata is not None else dict(_EMPTY_METADATA)
 
     return results
+ 
