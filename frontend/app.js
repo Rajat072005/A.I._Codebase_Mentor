@@ -318,6 +318,18 @@ function getIntentMeta(intent) {
   return INTENT_META[key] || { icon: "◍", label: key || "general", cls: "intent-default" };
 }
 
+// Follow-up prompts by intent — same idea as the sidebar chips, but
+// surfaced right where the user just got an answer, so the next question
+// is one click away instead of a trip back up to the sidebar.
+const FOLLOWUP_POOL = {
+  overview:       ["Explain the folder structure", "What's the tech stack?", "Where should I start reading?"],
+  architecture:   ["Walk me through the data flow", "How do the main modules connect?", "Any circular dependencies?"],
+  implementation: ["Show me the relevant code", "Are there tests for this?", "What edge cases are handled?"],
+  locate:         ["How is this file used elsewhere?", "What calls into this?", "Show related files"],
+  debug:          ["What could cause this to fail silently?", "Suggest a fix", "How would I reproduce this?"],
+  casual:         ["Give me a codebase overview", "What should I explore first?", "Explain the architecture"],
+};
+
 function appendMessage(role, text, intent, confidence) {
   const wrapper = document.createElement("div");
   wrapper.className = `message ${role}`;
@@ -367,12 +379,42 @@ function appendMessage(role, text, intent, confidence) {
     wrapper.appendChild(meta);
   }
 
+  // Copy button — reads the bubble's rendered text at click time, so it
+  // works correctly even though the text isn't filled in until below.
+  if (role === "ai") {
+    const actions = document.createElement("div");
+    actions.className = "message-actions";
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "message-action-btn";
+    copyBtn.textContent = "⧉ Copy answer";
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(bubble.innerText);
+        copyBtn.textContent = "✓ Copied";
+        copyBtn.classList.add("copied");
+      } catch {
+        copyBtn.textContent = "Select & copy";
+      }
+      setTimeout(() => {
+        copyBtn.textContent = "⧉ Copy answer";
+        copyBtn.classList.remove("copied");
+      }, 1500);
+    });
+    actions.appendChild(copyBtn);
+    wrapper.appendChild(actions);
+  }
+
   messagesArea.appendChild(wrapper);
-  scrollToBottom();
+  handleNewMessage(role);
 
   // Render content — AI text streams in; plain text (user messages) is instant.
   if (role === "ai" && typeof marked !== "undefined") {
-    streamMarkdownInto(bubble, text || "");
+    streamMarkdownInto(bubble, text || "", () => {
+      enhanceInlineRefs(bubble);
+      if (intent) appendFollowups(wrapper, intent);
+      handleNewMessage(role);
+    });
   } else {
     bubble.textContent = text || "";
   }
@@ -380,14 +422,52 @@ function appendMessage(role, text, intent, confidence) {
   return wrapper;
 }
 
+// Suggests 3 low-friction next questions under a finished AI answer.
+function appendFollowups(wrapper, intent) {
+  const key = String(intent || "").toLowerCase().trim();
+  const pool = FOLLOWUP_POOL[key];
+  if (!pool) return;
+
+  const row = document.createElement("div");
+  row.className = "message-followups";
+  pool.slice(0, 3).forEach((prompt) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "followup-chip";
+    chip.textContent = prompt;
+    chip.addEventListener("click", () => {
+      questionInput.value = prompt;
+      autoResizeTextarea();
+      questionInput.focus();
+    });
+    row.appendChild(chip);
+  });
+  wrapper.appendChild(row);
+  scrollToBottomIfNear();
+}
+
+// Styles inline code that looks like a file path (has a slash and a
+// plausible extension) as a small reference chip — purely a style pass
+// over content the backend already returned, no new data involved.
+function enhanceInlineRefs(bubble) {
+  const pathPattern = /^[\w.\-/]+\/[\w.\-]+\.[a-zA-Z0-9]{1,6}$/;
+  bubble.querySelectorAll("code").forEach((el) => {
+    if (el.closest("pre")) return; // code blocks are handled separately
+    if (pathPattern.test(el.textContent.trim())) {
+      el.classList.add("file-ref");
+    }
+  });
+}
+
 // Reveals markdown a few words at a time, re-parsing the growing string on
 // each tick so formatting (bold, lists, code fences) is always valid by the
 // time it's shown. Falls back to an instant render for very short strings.
-function streamMarkdownInto(bubble, fullText) {
+function streamMarkdownInto(bubble, fullText, onComplete) {
   const words = fullText.split(/(\s+)/); // keep whitespace tokens so spacing survives
   if (words.length <= 6) {
     bubble.innerHTML = marked.parse(fullText);
     enhanceCodeBlocks(bubble);
+    if (onComplete) onComplete();
     return;
   }
 
@@ -403,7 +483,7 @@ function streamMarkdownInto(bubble, fullText) {
     const partial = words.slice(0, i).join("");
     bubble.innerHTML = marked.parse(partial);
     bubble.appendChild(caret);
-    scrollToBottom();
+    scrollToBottomIfNear();
 
     if (i < words.length) {
       setTimeout(tick, 16);
@@ -412,7 +492,8 @@ function streamMarkdownInto(bubble, fullText) {
       caret.remove();
       bubble.innerHTML = marked.parse(fullText); // final, guaranteed-correct render
       enhanceCodeBlocks(bubble);
-      scrollToBottom();
+      scrollToBottomIfNear();
+      if (onComplete) onComplete();
     }
   }
 
@@ -461,7 +542,7 @@ function appendThinking() {
 
   wrapper.appendChild(indicator);
   messagesArea.appendChild(wrapper);
-  scrollToBottom();
+  scrollToBottomIfNear();
   return wrapper;
 }
 
@@ -473,6 +554,60 @@ function clearWelcomeMessage() {
 function scrollToBottom() {
   messagesArea.scrollTop = messagesArea.scrollHeight;
 }
+
+function isNearBottom() {
+  return messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight < 80;
+}
+
+// Used during streaming/incremental updates: only follows the bottom if the
+// user was already there, so it never yanks someone back down mid-read.
+function scrollToBottomIfNear() {
+  if (isNearBottom()) scrollToBottom();
+}
+
+// Called whenever a message is appended. User messages always scroll into
+// view (they just sent it); AI messages only auto-scroll if the user was
+// already at the bottom, otherwise a "new messages" pill appears instead
+// of yanking their scroll position around.
+let unseenAiCount = 0;
+function handleNewMessage(role) {
+  if (role === "user" || isNearBottom()) {
+    scrollToBottom();
+    unseenAiCount = 0;
+    updateJumpLatest();
+  } else if (role === "ai") {
+    unseenAiCount++;
+    updateJumpLatest();
+  }
+}
+
+function updateJumpLatest() {
+  const btn = document.getElementById("jump-latest");
+  const label = document.getElementById("jump-latest-label");
+  if (!btn || !label) return;
+  if (unseenAiCount > 0 && !isNearBottom()) {
+    label.textContent = unseenAiCount === 1 ? "New message" : `${unseenAiCount} new messages`;
+    btn.classList.remove("hidden");
+  } else {
+    btn.classList.add("hidden");
+  }
+}
+
+(function setupJumpLatest() {
+  const btn = document.getElementById("jump-latest");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    scrollToBottom();
+    unseenAiCount = 0;
+    updateJumpLatest();
+  });
+  messagesArea.addEventListener("scroll", () => {
+    if (isNearBottom()) {
+      unseenAiCount = 0;
+      updateJumpLatest();
+    }
+  });
+})();
 
 function autoResizeTextarea() {
   questionInput.style.height = "auto";
@@ -621,10 +756,10 @@ function animateFileGrid() {
   const grid = document.getElementById("file-grid");
   if (!grid) return () => {};
 
-  const COLS = 18, ROWS = 4;
+  const CELLS = 32; // single slim row now — see the CSS note on why
   grid.innerHTML = "";
   const cells = [];
-  for (let i = 0; i < COLS * ROWS; i++) {
+  for (let i = 0; i < CELLS; i++) {
     const cell = document.createElement("div");
     cell.className = "cell";
     grid.appendChild(cell);
@@ -634,16 +769,14 @@ function animateFileGrid() {
   let active = true;
   (function loop() {
     if (!active) return;
-    // Light a small random cluster, unlight an older one — a gentle scan
-    // rather than a strict left-to-right sweep, so it doesn't look canned.
-    const n = 2 + Math.floor(Math.random() * 3);
+    const n = 1 + Math.floor(Math.random() * 2);
     for (let i = 0; i < n; i++) {
       const c = cells[Math.floor(Math.random() * cells.length)];
       c.classList.remove("lit", "lit-violet");
       c.classList.add(Math.random() > 0.5 ? "lit" : "lit-violet");
       setTimeout(() => c.classList.remove("lit", "lit-violet"), 500);
     }
-    setTimeout(loop, 90);
+    setTimeout(loop, 110);
   })();
 
   return function stop() {
@@ -842,4 +975,251 @@ function fireSuccessBurst(anchorEl) {
       }
     }
   });
+})();
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Round 3 — indexing-time engagement, ⌘K onboarding, custom repo switcher
+// Same rule as before: presentation and convenience only. Nothing here
+// calls a new endpoint or changes what gets sent to the backend.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ── Terminal-style log during indexing ──────────────────────────────────
+// Deliberately generic ("chunking source…", not invented filenames) so it
+// never implies data we don't actually have.
+function animateTerminalLog() {
+  const el = document.getElementById("terminal-log");
+  if (!el) return () => {};
+
+  const LINES = [
+    "resolving repository structure…",
+    "walking directory tree…",
+    "skipping node_modules, .git…",
+    "reading source files…",
+    "tokenizing source…",
+    "chunking by function & class boundaries…",
+    "embedding batch 1/9…", "embedding batch 2/9…", "embedding batch 3/9…",
+    "embedding batch 4/9…", "embedding batch 5/9…", "embedding batch 6/9…",
+    "writing to vector index…",
+    "building symbol map…",
+    "cross-referencing imports…",
+    "finalizing index…",
+  ];
+
+  el.innerHTML = "";
+  let i = 0;
+  let active = true;
+
+  function pushLine(text) {
+    const line = document.createElement("div");
+    line.className = "log-line";
+    line.innerHTML = `<span class="log-prefix">›</span>${text}`;
+    el.appendChild(line);
+    while (el.children.length > 6) el.removeChild(el.firstChild);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  (function loop() {
+    if (!active) return;
+    pushLine(LINES[i % LINES.length]);
+    i++;
+    setTimeout(loop, 260 + Math.random() * 220);
+  })();
+
+  return function stop() {
+    active = false;
+    pushLine("done.");
+  };
+}
+
+// Chain onto the same wrapper that already drives the file grid.
+const _origRunIndexingAnimation2 = runIndexingAnimation;
+runIndexingAnimation = async function (url) {
+  const stopLog = animateTerminalLog();
+  const stopTip = animateProgressTips();
+  await _origRunIndexingAnimation2(url);
+  stopLog();
+  stopTip();
+};
+
+// ── Rotating capability tips ─────────────────────────────────────────────
+function animateProgressTips() {
+  const el = document.getElementById("progress-tip");
+  if (!el) return () => {};
+
+  const TIPS = [
+    "Tip: ask about architecture, not just individual files.",
+    "Tip: press ⌘K anywhere to jump to a repo or a question.",
+    "Tip: \"Help me debug the login issue\" works — try a real bug.",
+    "Tip: you can queue a question above while this finishes.",
+    "Tip: answers cite the actual code retrieved, not guesses.",
+  ];
+
+  let i = 0;
+  el.textContent = TIPS[0];
+  const id = setInterval(() => {
+    el.classList.add("fade");
+    setTimeout(() => {
+      i = (i + 1) % TIPS.length;
+      el.textContent = TIPS[i];
+      el.classList.remove("fade");
+    }, 300);
+  }, 3200);
+
+  return function stop() {
+    clearInterval(id);
+    el.textContent = "";
+  };
+}
+
+// ── Queue a question while indexing runs ────────────────────────────────
+let queuedQuestion = "";
+
+const queuedInput = document.getElementById("queued-question-input");
+if (queuedInput) {
+  queuedInput.addEventListener("input", () => {
+    queuedQuestion = queuedInput.value;
+  });
+}
+
+const _origSwitchToChat = switchToChat;
+switchToChat = async function (repoName) {
+  await _origSwitchToChat(repoName);
+  if (queuedQuestion.trim()) {
+    questionInput.value = queuedQuestion.trim();
+    autoResizeTextarea();
+  }
+  maybeShowCmdkHint();
+};
+
+// Reset the queue field whenever indexing is restarted.
+backToIndexBtn.addEventListener("click", () => {
+  queuedQuestion = "";
+  if (queuedInput) queuedInput.value = "";
+});
+
+// ── ⌘K onboarding hint (shown once, via localStorage — this is a real
+//    site the user downloads and hosts, not a claude.ai artifact, so
+//    normal browser storage is the right tool here) ─────────────────────
+function maybeShowCmdkHint() {
+  const hint = document.getElementById("cmdk-hint");
+  if (!hint) return;
+  let seen = false;
+  try { seen = localStorage.getItem("mentor_cmdk_hint_seen") === "1"; } catch {}
+  if (seen) return;
+
+  hint.classList.remove("hidden");
+  const dismiss = () => {
+    hint.classList.add("leaving");
+    setTimeout(() => hint.classList.add("hidden"), 300);
+    try { localStorage.setItem("mentor_cmdk_hint_seen", "1"); } catch {}
+    window.removeEventListener("keydown", onAnyKey);
+  };
+  const onAnyKey = (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) dismiss();
+  };
+  window.addEventListener("keydown", onAnyKey);
+  setTimeout(dismiss, 6000);
+}
+
+// ── Custom repo switcher — a styled button + panel that drives the real
+//    (visually hidden) <select>, so every existing behavior that reads
+//    repoSelector.value or listens for its "change" event keeps working. ──
+(function setupRepoSwitcher() {
+  const wrap    = document.getElementById("repo-switcher");
+  const trigger = document.getElementById("repo-switcher-trigger");
+  const current = document.getElementById("repo-switcher-current");
+  const panel   = document.getElementById("repo-switcher-panel");
+  if (!wrap || !trigger || !panel) return;
+
+  // Move the panel to <body> and drive it with position:fixed, computed
+  // from the trigger's own coordinates. This is the fix for the dropdown
+  // rendering behind/underneath sidebar content — nesting it inside a
+  // normal-flow sidebar meant it could get clipped or out-stacked by
+  // sibling sections depending on their own layout. As a fixed layer on
+  // <body> it always paints above everything, unconditionally.
+  document.body.appendChild(panel);
+
+  function position() {
+    const r = trigger.getBoundingClientRect();
+    panel.style.left  = `${r.left}px`;
+    panel.style.top   = `${r.bottom + 6}px`;
+    panel.style.width = `${r.width}px`;
+  }
+
+  function sync() {
+    const opts = Array.from(repoSelector.options).filter((o) => o.value);
+    current.textContent = repoSelector.selectedOptions[0]?.textContent || "No repos available";
+    trigger.disabled = opts.length === 0;
+
+    panel.innerHTML = "";
+    opts.forEach((opt) => {
+      const item = document.createElement("div");
+      item.className = "repo-switcher-item" + (opt.value === repoSelector.value ? " selected" : "");
+      item.setAttribute("role", "option");
+      item.textContent = opt.value;
+      item.addEventListener("click", () => {
+        repoSelector.value = opt.value;
+        repoSelector.dispatchEvent(new Event("change"));
+        close();
+      });
+      panel.appendChild(item);
+    });
+  }
+
+  function open() {
+    sync();
+    position();
+    wrap.classList.add("open");
+    panel.classList.remove("hidden");
+    trigger.setAttribute("aria-expanded", "true");
+  }
+  function close() {
+    wrap.classList.remove("open");
+    panel.classList.add("hidden");
+    trigger.setAttribute("aria-expanded", "false");
+  }
+
+  trigger.addEventListener("click", () => {
+    panel.classList.contains("hidden") ? open() : close();
+  });
+  document.addEventListener("click", (e) => {
+    if (!wrap.contains(e.target) && !panel.contains(e.target)) close();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") close();
+  });
+  // A fixed-position panel doesn't move with the page, so if the trigger
+  // moves under it (scroll/resize) just close rather than show a stale spot.
+  window.addEventListener("scroll", () => { if (!panel.classList.contains("hidden")) close(); }, true);
+  window.addEventListener("resize", () => { if (!panel.classList.contains("hidden")) close(); });
+
+  // Keep the label in sync no matter what changed the select (custom panel,
+  // the command palette, or loadRepos populating it after an index run).
+  repoSelector.addEventListener("change", sync);
+  const _origLoadRepos = loadRepos;
+  loadRepos = async function (preferredRepo) {
+    await _origLoadRepos(preferredRepo);
+    sync();
+  };
+
+  sync();
+})();
+
+// ── Hero code-preview annotation rotation (purely decorative) ──────────
+(function setupPreviewAnnotation() {
+  const el = document.getElementById("preview-annotation");
+  if (!el) return;
+  const MESSAGES = [
+    "✓ traced → getUser(payload.sub)",
+    "✓ flagged: no expiry check",
+    "✓ linked to 3 call sites",
+  ];
+  let i = 0;
+  // Matches the 4.6s CSS animation duration so the text changes while the
+  // annotation is invisible (start of its cycle), never mid-fade.
+  setInterval(() => {
+    i = (i + 1) % MESSAGES.length;
+    el.textContent = MESSAGES[i];
+  }, 4600);
 })();

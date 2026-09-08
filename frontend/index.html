@@ -29,6 +29,8 @@
     </header>
 
     <main class="index-main">
+      <div class="index-layout">
+      <div class="index-left">
       <div class="index-hero">
         <div class="hero-badge">⟨/⟩ Reads the repo, answers in plain English</div>
         <h1 class="hero-title">Understand Any Codebase,<br /><span class="gradient-text">Instantly</span></h1>
@@ -86,9 +88,27 @@
           </div>
         </div>
 
-        <!-- Purely decorative: little blocks light up in sequence to suggest
-             files being scanned. Driven entirely by app.js timers, no data. -->
+        <!-- One unified "console": a slim single-row scan strip acts as the
+             terminal's header, instead of a separate blocky grid — avoids
+             two competing "work is happening" visuals stacked together. -->
         <div class="file-grid" id="file-grid" aria-hidden="true"></div>
+        <div class="terminal-log" id="terminal-log" aria-hidden="true"></div>
+
+        <!-- Real interactivity: lets the user do something useful while
+             indexing runs instead of just watching it. -->
+        <div class="queue-question-row" id="queue-question-row">
+          <span class="queue-question-icon">✎</span>
+          <input
+            type="text"
+            id="queued-question-input"
+            class="queue-question-input"
+            placeholder="Got a question ready? Type it now — it'll be waiting for you."
+            autocomplete="off"
+          />
+        </div>
+
+        <p class="progress-tip" id="progress-tip"></p>
+
         <div class="index-stats hidden" id="index-stats">
           <div class="stat">
             <span class="stat-value" id="stat-files">—</span>
@@ -104,6 +124,34 @@
         </button>
       </div>
 
+      </div><!-- /.index-left -->
+
+      <!-- Live "code being understood" preview — purely illustrative,
+           generic sample code (not the user's actual repo), shown only on
+           wide viewports as a companion to the hero, not on mobile. -->
+      <div class="index-preview" aria-hidden="true">
+        <div class="preview-window">
+          <div class="preview-titlebar">
+            <span class="preview-dot dot-red"></span>
+            <span class="preview-dot dot-yellow"></span>
+            <span class="preview-dot dot-green"></span>
+            <span class="preview-filename">auth/session.ts</span>
+          </div>
+          <div class="preview-body">
+            <div class="preview-line"><span class="ln">1</span><span class="code"><span class="tok-kw">export function</span> <span class="tok-fn">validateSession</span>(token<span class="tok-punc">:</span> <span class="tok-type">string</span>) {</span></div>
+            <div class="preview-line"><span class="ln">2</span><span class="code">&nbsp;&nbsp;<span class="tok-kw">const</span> payload = <span class="tok-fn">verify</span>(token, SECRET);</span></div>
+            <div class="preview-line highlighted"><span class="ln">3</span><span class="code">&nbsp;&nbsp;<span class="tok-kw">if</span> (!payload<span class="tok-punc">.</span>sub) <span class="tok-kw">throw new</span> <span class="tok-fn">AuthError</span>();</span></div>
+            <div class="preview-line"><span class="ln">4</span><span class="code">&nbsp;&nbsp;<span class="tok-kw">return</span> <span class="tok-fn">getUser</span>(payload<span class="tok-punc">.</span>sub);</span></div>
+            <div class="preview-line"><span class="ln">5</span><span class="code">}</span></div>
+            <div class="preview-line dim"><span class="ln">6</span><span class="code">&nbsp;</span></div>
+            <div class="preview-line dim"><span class="ln">7</span><span class="code"><span class="tok-kw">export function</span> <span class="tok-fn">refreshToken</span>(old<span class="tok-punc">:</span> <span class="tok-type">string</span>) {</span></div>
+            <div class="preview-scanbar"></div>
+            <div class="preview-annotation" id="preview-annotation">✓ traced → getUser(payload.sub)</div>
+          </div>
+        </div>
+      </div>
+
+      </div><!-- /.index-layout -->
     </main>
   </div>
 
@@ -123,7 +171,18 @@
 
       <div class="sidebar-section">
         <label class="sidebar-label">Active Repository</label>
-        <select id="repo-selector" class="repo-select">
+        <div class="repo-switcher" id="repo-switcher">
+          <button type="button" class="repo-switcher-trigger" id="repo-switcher-trigger" aria-haspopup="listbox" aria-expanded="false">
+            <span class="repo-switcher-icon">⌬</span>
+            <span class="repo-switcher-current" id="repo-switcher-current">Loading repos…</span>
+            <span class="repo-switcher-chevron">⌄</span>
+          </button>
+          <div class="repo-switcher-panel hidden" id="repo-switcher-panel" role="listbox"></div>
+        </div>
+        <!-- Kept as the real source of truth so existing logic (change
+             listener, command palette, stats lookup) doesn't need to
+             change — the custom switcher above just drives this. -->
+        <select id="repo-selector" class="sr-only" tabindex="-1" aria-hidden="true">
           <option value="">Loading repos...</option>
         </select>
       </div>
@@ -165,15 +224,25 @@
           <h2 class="chat-title">Ask about <span id="chat-repo-label">your repository</span></h2>
           <p class="chat-subtitle">Questions are classified by intent and answered with retrieved code context</p>
         </div>
+        <!-- Shown once (tracked via localStorage), points at the ⌘K flow. -->
+        <div class="cmdk-hint hidden" id="cmdk-hint">
+          <kbd>⌘K</kbd><span>jump to any repo or question</span>
+        </div>
       </div>
 
       <!-- Messages -->
-      <div class="messages-area" id="messages-area">
-        <div class="welcome-message">
-          <div class="welcome-icon">🤖</div>
-          <h3>Ready to help!</h3>
-          <p>Select a repository and start asking questions about the codebase. I can explain architecture, trace implementations, locate files, and help debug issues.</p>
+      <div class="messages-wrap">
+        <div class="messages-area" id="messages-area">
+          <div class="welcome-message">
+            <div class="welcome-icon">🤖</div>
+            <h3>Ready to help!</h3>
+            <p>Select a repository and start asking questions about the codebase. I can explain architecture, trace implementations, locate files, and help debug issues.</p>
+          </div>
         </div>
+        <button class="jump-latest hidden" id="jump-latest" type="button">
+          <span class="jump-latest-icon">↓</span>
+          <span id="jump-latest-label">New messages</span>
+        </button>
       </div>
 
       <!-- Input -->
