@@ -85,6 +85,10 @@
             <span class="step-label">Finalizing index</span>
           </div>
         </div>
+
+        <!-- Purely decorative: little blocks light up in sequence to suggest
+             files being scanned. Driven entirely by app.js timers, no data. -->
+        <div class="file-grid" id="file-grid" aria-hidden="true"></div>
         <div class="index-stats hidden" id="index-stats">
           <div class="stat">
             <span class="stat-value" id="stat-files">—</span>
@@ -185,10 +189,24 @@
             <span class="send-icon">↑</span>
           </button>
         </div>
-        <p class="input-footer">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
+        <p class="input-footer">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line · <kbd>⌘K</kbd> anywhere</p>
       </div>
     </main>
 
+  </div>
+
+  <!-- Command palette — global quick-jump. Pure UI: it only calls existing
+       functions (switch repo, fill a question, go back) already defined in
+       app.js; it introduces no new API calls of its own. -->
+  <div class="cmdk-overlay hidden" id="cmdk-overlay">
+    <div class="cmdk-panel" role="dialog" aria-modal="true" aria-label="Command palette">
+      <div class="cmdk-input-row">
+        <span class="cmdk-icon">⌘</span>
+        <input type="text" id="cmdk-input" class="cmdk-input" placeholder="Jump to a repo, ask something, or start over…" autocomplete="off" />
+        <kbd class="cmdk-esc">esc</kbd>
+      </div>
+      <div class="cmdk-list" id="cmdk-list"></div>
+    </div>
   </div>
 
   <!-- Marked.js for Markdown rendering -->
