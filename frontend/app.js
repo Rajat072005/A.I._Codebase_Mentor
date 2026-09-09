@@ -1006,10 +1006,15 @@ const commandPalette = (function setupCommandPalette() {
       const row = document.createElement("div");
       row.className = "cmdk-item" + (idx === activeIndex ? " active" : "");
       row.innerHTML = `<span class="cmdk-item-icon">${it.icon}</span><span>${it.label}</span>${it.hint ? `<span class="cmdk-item-hint">${it.hint}</span>` : ""}`;
+      
       row.addEventListener("mouseenter", () => {
+        // Just update classes instead of rebuilding the entire DOM
+        const currentActive = list.querySelector(".cmdk-item.active");
+        if (currentActive) currentActive.classList.remove("active");
+        row.classList.add("active");
         activeIndex = idx;
-        render(input.value);
       });
+      
       row.addEventListener("click", () => {
         try {
           it.run();
@@ -1479,11 +1484,28 @@ async function renderHomeRepos() {
       item.className = "explore-item";
       item.innerHTML = `
         <span class="explore-item-name">${repo}</span>
-        <span class="explore-item-action">Chat →</span>
+        <div class="explore-item-controls">
+          <button class="remove-repo-btn" title="Remove from My Repos">✕</button>
+          <span class="explore-item-action">Chat →</span>
+        </div>
       `;
-      item.addEventListener("click", () => {
+      
+      // Click on the card to chat
+      item.addEventListener("click", (e) => {
+        if (e.target.closest(".remove-repo-btn")) return; // Ignore if they clicked delete
         switchToChat(repo);
       });
+      
+      // Click on delete button
+      const removeBtn = item.querySelector(".remove-repo-btn");
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        let currentRepos = JSON.parse(localStorage.getItem("myRepos") || "[]");
+        currentRepos = currentRepos.filter(r => r !== repo);
+        localStorage.setItem("myRepos", JSON.stringify(currentRepos));
+        renderHomeRepos(); // Re-render the list immediately
+      });
+      
       listEl.appendChild(item);
     });
   } catch (err) {
