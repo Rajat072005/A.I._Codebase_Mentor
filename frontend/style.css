@@ -250,6 +250,9 @@ body::before {
 
 /* ─── INDEX VIEW ────────────────────────────────────────────── */
 .app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 20px 32px;
   border-bottom: 1px solid var(--border);
   background: rgba(20, 15, 34, 0.7);
@@ -376,7 +379,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 18px;
-  opacity: 0;
+  opacity: 1;
   animation: riseIn 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.18s forwards;
 }
 
@@ -2217,4 +2220,453 @@ body::before {
   border-radius: 5px;
   padding: 1px 7px;
   font-size: 0.86em;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ROUND 6 — final chat pass: error state, timestamps, top scroll fade
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Error bubbles — visually distinct from a normal answer, calmer than
+     a jarring red block since this is a connection hiccup, not a crisis ── */
+.message.is-error .message-bubble {
+  border-color: rgba(251, 124, 142, 0.35);
+  background: rgba(251, 124, 142, 0.06);
+  color: var(--text-secondary);
+}
+
+.message.is-error .mentor-orb {
+  background: linear-gradient(135deg, #FB7C8E, #F6C97C);
+  box-shadow: 0 0 8px rgba(251, 124, 142, 0.5);
+  animation: none;
+}
+
+/* ── Timestamps — quiet by default, appear on hover like the actions row ── */
+.message-time {
+  color: var(--text-hint);
+  font-weight: 400;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  margin-left: 2px;
+}
+
+.message:hover .message-time {
+  opacity: 0.7;
+}
+
+/* ── Top scroll fade — signals "more above" the same way the terminal log
+     already fades its own overflow, so the two feel like one design language ── */
+.messages-wrap::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: linear-gradient(to bottom, var(--bg), transparent);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Settings Modal */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   API KEY BUTTON, SETTINGS MODAL, HOME "MY REPOSITORIES" EXPLORER
+   Rebuilt on the real design tokens above — the previous version of this
+   block referenced colors (--text-main, --accent-blue, --bg-card, etc.)
+   that were never defined in :root, so it rendered with browser defaults
+   instead of the theme. Everything below uses only tokens that exist.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Header "API Key" button ─────────────────────────────────────────── */
+.premium-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 9px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.premium-settings-btn:hover {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px var(--accent-2-soft);
+  transform: translateY(-1px);
+}
+
+.premium-settings-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.premium-settings-btn .premium-icon {
+  color: var(--accent-2);
+  font-size: 0.95rem;
+}
+
+/* Small icon-only variant used in the chat sidebar */
+.settings-btn-icon {
+  background: none;
+  border: none;
+  color: var(--text-hint);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  margin-left: auto;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.settings-btn-icon:hover {
+  color: var(--accent-2);
+  background: var(--accent-2-soft);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+}
+
+/* ── Settings modal (API key) ────────────────────────────────────────── */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 6, 24, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.settings-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-modal {
+  width: 100%;
+  max-width: 460px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md), 0 0 50px rgba(155, 124, 246, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: cmdkRise 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-header h3 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-close {
+  background: none;
+  border: none;
+  color: var(--text-hint);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.settings-close:hover {
+  color: var(--text-primary);
+  background: var(--surface-alt);
+}
+
+.settings-body {
+  padding: 22px;
+}
+
+.settings-desc {
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.settings-steps {
+  margin: 0 0 20px;
+  padding-left: 20px;
+  color: var(--text-secondary);
+  font-size: 0.87rem;
+  line-height: 1.85;
+}
+
+.settings-steps a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(69, 224, 196, 0.35);
+}
+
+.settings-steps a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.settings-input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-key-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-deep);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-key-field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.settings-key-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.settings-key-field input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-code);
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+
+.settings-key-field input::placeholder {
+  color: var(--text-hint);
+  font-family: var(--font-ui);
+}
+
+.settings-key-toggle {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-hint);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 2px;
+  opacity: 0.65;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.settings-key-toggle:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.settings-privacy {
+  margin-top: 16px;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--accent-2-soft);
+  border-left: 2px solid var(--accent-2);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: 11px 14px;
+}
+
+.settings-privacy strong {
+  color: var(--text-primary);
+}
+
+.settings-footer {
+  padding: 16px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.settings-footer .btn-primary {
+  width: auto;
+  padding: 11px 24px;
+}
+
+.settings-save-status {
+  margin-right: auto;
+  align-self: center;
+  font-size: 0.8rem;
+  color: var(--success);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.settings-save-status.visible {
+  opacity: 1;
+}
+
+/* ── Repo switcher group labels (My Repos / Global Repos) ───────────── */
+.repo-switcher-group-label {
+  padding: 10px 10px 4px;
+  font-family: var(--font-code);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-hint);
+  pointer-events: none;
+}
+
+.repo-switcher-group-label:first-child {
+  padding-top: 4px;
+}
+
+/* ── Home "My Repositories" explorer ─────────────────────────────────── */
+.home-explore-section {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.explore-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.home-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  padding: 7px 12px 7px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.home-search-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.home-search-btn .search-icon {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-code);
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+}
+
+.explore-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.explore-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 13px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+}
+
+.explore-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.explore-item-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-code);
+  font-size: 0.88rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explore-item-name::before {
+  content: "⌬";
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.explore-item-action {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.explore-item:hover .explore-item-action {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.explore-empty {
+  text-align: center;
+  color: var(--text-hint);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  padding: 28px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-sm);
 }

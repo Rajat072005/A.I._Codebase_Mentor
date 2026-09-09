@@ -26,6 +26,10 @@
         <span class="logo-icon">⟨/⟩</span>
         <span class="logo-text">AI Codebase Mentor</span>
       </div>
+      <button id="settings-btn-index" class="premium-settings-btn" title="Manage your Gemini API key">
+        <span class="premium-icon">✦</span>
+        <span>API Key</span>
+      </button>
     </header>
 
     <main class="index-main">
@@ -61,6 +65,20 @@
           Index Repository
         </button>
         <div id="index-error" class="error-message hidden"></div>
+      </div>
+
+      <!-- Explore Repos Section (Home Page) -->
+      <div class="index-card home-explore-section" id="home-explore-section">
+        <div class="explore-header">
+          <h3 class="explore-title">My Repositories</h3>
+          <button id="home-search-btn" class="home-search-btn">
+            <span class="search-icon">⌘K</span>
+            Search Global
+          </button>
+        </div>
+        <div class="explore-list" id="home-my-repos-list">
+          <!-- Populated dynamically by JS -->
+        </div>
       </div>
 
       <!-- Indexing Progress (shown during/after indexing) -->
@@ -167,6 +185,7 @@
       <div class="sidebar-logo">
         <span class="logo-icon">⟨/⟩</span>
         <span class="logo-text">Codebase Mentor</span>
+        <button id="settings-btn-chat" class="settings-btn-icon" title="Settings">⚙️</button>
       </div>
 
       <div class="sidebar-section">
@@ -275,6 +294,39 @@
         <kbd class="cmdk-esc">esc</kbd>
       </div>
       <div class="cmdk-list" id="cmdk-list"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (API Key) -->
+  <div class="settings-overlay hidden" id="settings-overlay">
+    <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
+      <div class="settings-header">
+        <h3>⚙️ Setup Your API Key</h3>
+        <button id="settings-close" class="settings-close" title="Close">×</button>
+      </div>
+      <div class="settings-body">
+        <p class="settings-desc">To query repositories, you need a free Google Gemini API key.</p>
+        <ol class="settings-steps">
+          <li>Go to <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">Google AI Studio</a> and sign in.</li>
+          <li>Click <strong>Create API Key</strong>.</li>
+          <li>Copy the key and paste it below.</li>
+        </ol>
+        <div class="settings-input-group">
+          <label for="api-key-input">Gemini API Key</label>
+          <div class="settings-key-field">
+            <span class="settings-key-icon">🔑</span>
+            <input type="password" id="api-key-input" placeholder="AIzaSy..." autocomplete="off" spellcheck="false" />
+            <button type="button" id="api-key-toggle" class="settings-key-toggle" title="Show key">👁</button>
+          </div>
+        </div>
+        <p class="settings-privacy">
+          <strong>Privacy Note:</strong> Your key is stored securely in your browser's local storage. It is never saved on our servers and is only used to answer your queries.
+        </p>
+      </div>
+      <div class="settings-footer">
+        <span class="settings-save-status" id="settings-save-status">✓ Key saved</span>
+        <button id="settings-save-btn" class="btn-primary">Save Key</button>
+      </div>
     </div>
   </div>
 

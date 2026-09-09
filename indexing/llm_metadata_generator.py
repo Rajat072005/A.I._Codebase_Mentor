@@ -4,9 +4,11 @@ import json
 import os
 import google.generativeai as genai
 from dotenv import load_dotenv
+from core.api_key_manager import configure_gemini
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_model_name = "gemini-3.6-flash"
 
 _model = genai.GenerativeModel("gemini-3.6-flash")
 
@@ -37,6 +39,10 @@ Source code:
 def generate_llm_metadata(file_content):
 
     prompt = _PROMPT_TEMPLATE.format(file_content=file_content)
+    
+    configure_gemini()
+    _model = genai.GenerativeModel(_model_name)
+    
     response = _model.generate_content(prompt)
 
     cleaned = response.text.strip()

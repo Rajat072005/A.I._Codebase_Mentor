@@ -4,10 +4,12 @@ import json
 import time
 import random
 import google.generativeai as genai
+from core.api_key_manager import configure_gemini
 
 from indexing import llm_metadata_generator  
 
 _model = genai.GenerativeModel("gemini-3.6-flash")
+_model_name = "gemini-3.6-flash"
 
                                                                           
 MAX_TOKENS_PER_BATCH = 6000                                                                 
@@ -73,6 +75,9 @@ def _call_gemini_batch(files):
         f"--- FILE: {f['path']} ---\n{f['content']}" for f in files
     )
     prompt = _BATCH_PROMPT_TEMPLATE.format(file_count=len(files), files_block=files_block)
+
+    configure_gemini()
+    _model = genai.GenerativeModel(_model_name)
 
     response = _model.generate_content(
         prompt,

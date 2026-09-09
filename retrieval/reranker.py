@@ -4,9 +4,11 @@ import json
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
+from core.api_key_manager import configure_gemini
 
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_model_name = "gemini-3.6-flash"
 
 _model = genai.GenerativeModel("gemini-3.6-flash")
 
@@ -44,6 +46,8 @@ Return ONLY valid JSON (no markdown, no explanation):
 ]
 """
 
+    configure_gemini()
+    _model = genai.GenerativeModel(_model_name)
     response = _model.generate_content(prompt)
     cleaned = response.text.strip().replace("```json", "").replace("```", "").strip()
 

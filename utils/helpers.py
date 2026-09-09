@@ -27,6 +27,11 @@ def make_code_keyword_document(chunks):
                                                                                 
 
 def extract_repo_name(repo_url):
+    parts = repo_url.rstrip("/").split("/")
+    if len(parts) >= 2 and ("github.com" in repo_url or "gitlab.com" in repo_url):
+        # Format: username_reponame
+        return f"{parts[-2]}_{parts[-1]}".replace(".git", "")
+    return parts[-1].replace(".git", "")
 
     return repo_url.rstrip("/").split("/")[-1]
 

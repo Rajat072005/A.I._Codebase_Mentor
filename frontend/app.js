@@ -53,6 +53,32 @@ async function startIndexing() {
     return;
   }
 
+  // Regex for valid GitHub URLs
+  const githubRegex = /^https?:\/\/(www\.)?github\.com\/[\w.-]+\/[\w.-]+\/?$/;
+  if (!githubRegex.test(url)) {
+    showIndexError("Invalid GitHub URL. Format: https://github.com/username/repository");
+    return;
+  }
+  
+  // Fast-skip: if already indexed, jump directly to chat
+  try {
+    const parts = url.replace(/\/$/, "").split("/");
+    let repoName = parts.pop().replace(".git", "");
+    let repoUser = parts.pop();
+    let expectedName = `${repoUser}_${repoName}`;
+    
+    const res = await fetch(`${API}/repos`);
+    const repos = await res.json();
+    if (repos.includes(expectedName)) {
+      currentRepo = expectedName;
+      saveToMyRepos(expectedName);
+      switchToChat(expectedName);
+      return;
+    }
+  } catch (err) {
+    // Ignore and proceed to normal indexing
+  }
+
   indexError.classList.add("hidden");
   indexBtn.disabled = true;
 
@@ -153,19 +179,36 @@ async function switchToChat(repoName) {
   chatRepoLabel.textContent = repoName || "your repository";
 }
 
+function saveToMyRepos(repoName) {
+  let myRepos = JSON.parse(localStorage.getItem("myRepos") || "[]");
+  if (!myRepos.includes(repoName)) {
+    myRepos.unshift(repoName);
+    localStorage.setItem("myRepos", JSON.stringify(myRepos));
+  }
+}
+
 async function loadRepos(preferredRepo) {
   try {
     const res = await fetch(`${API}/repos`);
-    const repos = await res.json();
+    const allRepos = await res.json();
 
     repoSelector.innerHTML = "";
 
-    if (!repos.length) {
-      repoSelector.innerHTML = '<option value="">No repos found</option>';
+    if (preferredRepo) saveToMyRepos(preferredRepo);
+
+    // The chat sidebar intentionally shows only repos *this browser* has
+    // indexed or opened before — not the full global pool. Global Repos
+    // stays a discovery surface (home page + ⌘K); once you're in a chat,
+    // seeing every repo anyone has ever indexed would just be noise.
+    const myRepos = JSON.parse(localStorage.getItem("myRepos") || "[]").filter((r) => allRepos.includes(r));
+
+    if (!myRepos.length) {
+      repoSelector.innerHTML = '<option value="">No repos yet — index one from the home page</option>';
+      currentRepo = null;
       return;
     }
 
-    repos.forEach((repo) => {
+    myRepos.forEach((repo) => {
       const opt = document.createElement("option");
       opt.value = repo;
       opt.textContent = repo;
@@ -256,10 +299,21 @@ questionInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     sendMessage();
+    return;
+  }
+  // Recall the last question you sent when the box is empty — mirrors the
+  // familiar "up arrow to edit your last message" pattern from Slack/Discord.
+  if (e.key === "ArrowUp" && questionInput.value === "" && lastUserQuestion) {
+    e.preventDefault();
+    questionInput.value = lastUserQuestion;
+    autoResizeTextarea();
+    requestAnimationFrame(() => questionInput.setSelectionRange(lastUserQuestion.length, lastUserQuestion.length));
   }
 });
 
 questionInput.addEventListener("input", autoResizeTextarea);
+
+let lastUserQuestion = "";
 
 async function sendMessage() {
   const question = questionInput.value.trim();
@@ -269,6 +323,7 @@ async function sendMessage() {
 
   // Render user message
   appendMessage("user", question);
+  lastUserQuestion = question;
   questionInput.value = "";
   autoResizeTextarea();
 
@@ -288,13 +343,13 @@ async function sendMessage() {
     thinkingEl.remove();
 
     if (data.error) {
-      appendMessage("ai", `⚠️ Error: ${data.error}`, null, null);
+      appendMessage("ai", `⚠️ Error: ${data.error}`, null, null, true);
     } else {
       appendMessage("ai", data.answer, data.intent, data.confidence);
     }
   } catch (err) {
     thinkingEl.remove();
-    appendMessage("ai", "⚠️ Could not reach the server. Make sure api.py is running.", null, null);
+    appendMessage("ai", "⚠️ Could not reach the server. Make sure api.py is running.", null, null, true);
   } finally {
     isWaiting = false;
     sendBtn.disabled = false;
@@ -330,9 +385,9 @@ const FOLLOWUP_POOL = {
   casual:         ["Give me a codebase overview", "What should I explore first?", "Explain the architecture"],
 };
 
-function appendMessage(role, text, intent, confidence) {
+function appendMessage(role, text, intent, confidence, isError) {
   const wrapper = document.createElement("div");
-  wrapper.className = `message ${role}`;
+  wrapper.className = `message ${role}` + (isError ? " is-error" : "");
 
   // Sender label — AI messages get a small breathing orb instead of a flat dot.
   const sender = document.createElement("div");
@@ -345,6 +400,10 @@ function appendMessage(role, text, intent, confidence) {
   } else {
     sender.textContent = "You";
   }
+  const time = document.createElement("span");
+  time.className = "message-time";
+  time.textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  sender.appendChild(time);
 
   // Bubble
   const bubble = document.createElement("div");
@@ -381,7 +440,8 @@ function appendMessage(role, text, intent, confidence) {
 
   // Copy button — reads the bubble's rendered text at click time, so it
   // works correctly even though the text isn't filled in until below.
-  if (role === "ai") {
+  // Skipped for error bubbles — there's nothing useful to copy or follow up on.
+  if (role === "ai" && !isError) {
     const actions = document.createElement("div");
     actions.className = "message-actions";
     const copyBtn = document.createElement("button");
@@ -406,14 +466,14 @@ function appendMessage(role, text, intent, confidence) {
   }
 
   messagesArea.appendChild(wrapper);
-  handleNewMessage(role);
+  handleNewMessage(role); // registers this message once — decides scroll + unread count
 
   // Render content — AI text streams in; plain text (user messages) is instant.
   if (role === "ai" && typeof marked !== "undefined") {
     streamMarkdownInto(bubble, text || "", () => {
       enhanceInlineRefs(bubble);
       if (intent) appendFollowups(wrapper, intent);
-      handleNewMessage(role);
+      scrollToBottomIfFollowing(); // just follow growth, don't re-count this message
     });
   } else {
     bubble.textContent = text || "";
@@ -443,7 +503,7 @@ function appendFollowups(wrapper, intent) {
     row.appendChild(chip);
   });
   wrapper.appendChild(row);
-  scrollToBottomIfNear();
+  scrollToBottomIfFollowing();
 }
 
 // Styles inline code that looks like a file path (has a slash and a
@@ -483,7 +543,7 @@ function streamMarkdownInto(bubble, fullText, onComplete) {
     const partial = words.slice(0, i).join("");
     bubble.innerHTML = marked.parse(partial);
     bubble.appendChild(caret);
-    scrollToBottomIfNear();
+    scrollToBottomIfFollowing();
 
     if (i < words.length) {
       setTimeout(tick, 16);
@@ -492,7 +552,7 @@ function streamMarkdownInto(bubble, fullText, onComplete) {
       caret.remove();
       bubble.innerHTML = marked.parse(fullText); // final, guaranteed-correct render
       enhanceCodeBlocks(bubble);
-      scrollToBottomIfNear();
+      scrollToBottomIfFollowing();
       if (onComplete) onComplete();
     }
   }
@@ -542,7 +602,7 @@ function appendThinking() {
 
   wrapper.appendChild(indicator);
   messagesArea.appendChild(wrapper);
-  scrollToBottomIfNear();
+  scrollToBottomIfFollowing();
   return wrapper;
 }
 
@@ -555,37 +615,45 @@ function scrollToBottom() {
   messagesArea.scrollTop = messagesArea.scrollHeight;
 }
 
-function isNearBottom() {
-  return messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight < 80;
+function distanceFromBottom() {
+  return messagesArea.scrollHeight - messagesArea.scrollTop - messagesArea.clientHeight;
 }
 
-// Used during streaming/incremental updates: only follows the bottom if the
-// user was already there, so it never yanks someone back down mid-read.
-function scrollToBottomIfNear() {
-  if (isNearBottom()) scrollToBottom();
-}
-
-// Called whenever a message is appended. User messages always scroll into
-// view (they just sent it); AI messages only auto-scroll if the user was
-// already at the bottom, otherwise a "new messages" pill appears instead
-// of yanking their scroll position around.
+// The single source of truth for "should new content pull the view down".
+// Only changes on a real user scroll — never re-derived from geometry at
+// content-mutation time, which is what caused the false trip: the
+// thinking indicator growing the page a moment after auto-scrolling was
+// enough to make a geometry re-check think the user had scrolled away,
+// even though nothing had actually moved under them.
+let followMode = true;
 let unseenAiCount = 0;
+
+// Call once per new top-level message (user or ai) to decide whether to
+// scroll and whether it counts toward the unread badge.
 function handleNewMessage(role) {
-  if (role === "user" || isNearBottom()) {
+  if (role === "user") followMode = true; // sending implies "show me the reply"
+  if (followMode) {
     scrollToBottom();
     unseenAiCount = 0;
-    updateJumpLatest();
   } else if (role === "ai") {
     unseenAiCount++;
-    updateJumpLatest();
   }
+  updateJumpLatest();
+}
+
+// Call for incremental growth within an already-registered message
+// (thinking dots, streaming ticks, follow-up chips appearing) — follows
+// along if the user is following, otherwise does nothing. Doesn't touch
+// the unread count, so a single answer never gets counted twice.
+function scrollToBottomIfFollowing() {
+  if (followMode) scrollToBottom();
 }
 
 function updateJumpLatest() {
   const btn = document.getElementById("jump-latest");
   const label = document.getElementById("jump-latest-label");
   if (!btn || !label) return;
-  if (unseenAiCount > 0 && !isNearBottom()) {
+  if (unseenAiCount > 0 && !followMode) {
     label.textContent = unseenAiCount === 1 ? "New message" : `${unseenAiCount} new messages`;
     btn.classList.remove("hidden");
   } else {
@@ -597,15 +665,18 @@ function updateJumpLatest() {
   const btn = document.getElementById("jump-latest");
   if (!btn) return;
   btn.addEventListener("click", () => {
+    followMode = true;
     scrollToBottom();
     unseenAiCount = 0;
     updateJumpLatest();
   });
+  // The only place followMode is ever set from geometry: an actual user
+  // scroll gesture. Landing back near the bottom re-enables auto-follow;
+  // scrolling away disables it. Content growth alone never touches this.
   messagesArea.addEventListener("scroll", () => {
-    if (isNearBottom()) {
-      unseenAiCount = 0;
-      updateJumpLatest();
-    }
+    followMode = distanceFromBottom() < 80;
+    if (followMode) unseenAiCount = 0;
+    updateJumpLatest();
   });
 })();
 
@@ -811,35 +882,67 @@ function fireSuccessBurst(anchorEl) {
 }
 
 // ── Command palette (⌘K / Ctrl+K) ───────────────────────────────────────
-// Reuses existing functions only (switchToChat/repoSelector, intent chips'
-// prompts, the back-to-index flow) — no new endpoints, no new state shape.
-(function setupCommandPalette() {
+// Reuses existing functions only (switchToChat, intent chips' prompts, the
+// back-to-index flow) — no new endpoints, no new state shape.
+const commandPalette = (function setupCommandPalette() {
   const overlay = document.getElementById("cmdk-overlay");
   const input   = document.getElementById("cmdk-input");
   const list    = document.getElementById("cmdk-list");
-  if (!overlay || !input || !list) return;
+  if (!overlay || !input || !list) return { open: () => {} };
 
   let items = [];
   let activeIndex = 0;
+  let currentScope = "all"; // "all" | "global"
 
-  function buildItems() {
+  // Builds the full item list, including every indexed repo (not just the
+  // ones already loaded into the sidebar's <select>) — this is what makes
+  // "search global" actually work from the home page, where the select
+  // hasn't been populated with anything yet.
+  async function buildItems(scope) {
     const built = [];
+    const inChat = viewChat.classList.contains("active");
 
-    if (viewChat.classList.contains("active")) {
-      Array.from(repoSelector.options).forEach((opt) => {
-        if (!opt.value) return;
+    let allRepos = [];
+    try {
+      const res = await fetch(`${API}/repos`);
+      allRepos = await res.json();
+    } catch {
+      /* server unreachable — repo groups just won't appear below */
+    }
+
+    if (allRepos.length) {
+      const myRepos = JSON.parse(localStorage.getItem("myRepos") || "[]").filter((r) => allRepos.includes(r));
+      const globalRepos = allRepos.filter((r) => !myRepos.includes(r));
+
+      // "My Repos" is already visible as its own list on the home page and
+      // in the sidebar, so a *global search* only needs to surface repos
+      // outside that list — showing both there was pure duplication.
+      if (scope !== "global") {
+        myRepos.forEach((repo) => {
+          built.push({
+            group: "My Repos",
+            icon: "⌬",
+            label: repo,
+            hint: repo === currentRepo ? "current" : "",
+            run: () => switchToChat(repo),
+          });
+        });
+      }
+
+      globalRepos.forEach((repo) => {
         built.push({
-          group: "Switch repository",
-          icon: "⇄",
-          label: opt.value,
-          hint: opt.value === currentRepo ? "current" : "",
-          run: () => {
-            repoSelector.value = opt.value;
-            repoSelector.dispatchEvent(new Event("change"));
-          },
+          group: "Global Repos",
+          icon: "◈",
+          label: repo,
+          hint: "",
+          run: () => switchToChat(repo),
         });
       });
+    }
 
+    if (scope === "global") return built; // repos only — no chips/navigation noise
+
+    if (inChat) {
       intentChips.forEach((chip) => {
         const prompt = chip.dataset.prompt;
         if (!prompt) return;
@@ -867,19 +970,10 @@ function fireSuccessBurst(anchorEl) {
       built.push({
         group: "Navigate",
         icon: "→",
-        label: "Focus repository URL field",
+        label: "Index a new repository",
         hint: "",
         run: () => repoUrlInput.focus(),
       });
-      if (currentRepo) {
-        built.push({
-          group: "Navigate",
-          icon: "→",
-          label: `Resume chat with ${currentRepo}`,
-          hint: "",
-          run: () => switchToChat(currentRepo),
-        });
-      }
     }
 
     return built;
@@ -893,7 +987,10 @@ function fireSuccessBurst(anchorEl) {
 
     list.innerHTML = "";
     if (!filtered.length) {
-      list.innerHTML = `<div class="cmdk-empty">No matches</div>`;
+      const emptyMsg = currentScope === "global"
+        ? "No other indexed repositories found yet."
+        : "No matches";
+      list.innerHTML = `<div class="cmdk-empty">${emptyMsg}</div>`;
       return;
     }
 
@@ -914,23 +1011,37 @@ function fireSuccessBurst(anchorEl) {
         render(input.value);
       });
       row.addEventListener("click", () => {
-        it.run();
+        try {
+          it.run();
+        } catch (err) {
+          console.error("Command palette action failed:", err);
+        }
         close();
       });
       list.appendChild(row);
     });
 
-    filtered._all = filtered; // stash for keyboard nav
     render._current = filtered;
   }
 
-  function open() {
-    items = buildItems();
+  async function open(opts) {
+    currentScope = (opts && opts.scope) || "all";
     activeIndex = 0;
     overlay.classList.remove("hidden");
     input.value = "";
-    render("");
+    input.placeholder = currentScope === "global"
+      ? "Search all globally indexed repositories…"
+      : "Jump to a repo, ask something, or start over…";
+    list.innerHTML = `<div class="cmdk-empty">Loading repositories…</div>`;
     setTimeout(() => input.focus(), 10);
+
+    try {
+      items = await buildItems(currentScope);
+    } catch (err) {
+      console.error("Command palette failed to load items:", err);
+      items = [];
+    }
+    render("");
   }
 
   function close() {
@@ -975,6 +1086,8 @@ function fireSuccessBurst(anchorEl) {
       }
     }
   });
+
+  return { open };
 })();
 
 
@@ -1153,7 +1266,8 @@ function maybeShowCmdkHint() {
     trigger.disabled = opts.length === 0;
 
     panel.innerHTML = "";
-    opts.forEach((opt) => {
+
+    function renderItem(opt) {
       const item = document.createElement("div");
       item.className = "repo-switcher-item" + (opt.value === repoSelector.value ? " selected" : "");
       item.setAttribute("role", "option");
@@ -1164,7 +1278,22 @@ function maybeShowCmdkHint() {
         close();
       });
       panel.appendChild(item);
-    });
+    }
+
+    // Mirror the <select>'s own grouping (My Repos / Global Repos) instead
+    // of a flat list, so the two surfaces stay visually consistent.
+    const groups = repoSelector.querySelectorAll("optgroup");
+    if (groups.length) {
+      groups.forEach((group) => {
+        const label = document.createElement("div");
+        label.className = "repo-switcher-group-label";
+        label.textContent = group.label;
+        panel.appendChild(label);
+        Array.from(group.children).forEach(renderItem);
+      });
+    } else {
+      opts.forEach(renderItem);
+    }
   }
 
   function open() {
@@ -1223,3 +1352,154 @@ function maybeShowCmdkHint() {
     el.textContent = MESSAGES[i];
   }, 4600);
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// API KEY & SETTINGS MODAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+const settingsOverlay = document.getElementById("settings-overlay");
+const settingsClose = document.getElementById("settings-close");
+const settingsSaveBtn = document.getElementById("settings-save-btn");
+const settingsSaveStatus = document.getElementById("settings-save-status");
+const apiKeyInput = document.getElementById("api-key-input");
+const apiKeyToggle = document.getElementById("api-key-toggle");
+const btnSettingsIndex = document.getElementById("settings-btn-index");
+const btnSettingsChat = document.getElementById("settings-btn-chat");
+
+function openSettings() {
+  apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+  settingsOverlay.classList.remove("hidden");
+  settingsSaveStatus.classList.remove("visible");
+  setTimeout(() => apiKeyInput.focus(), 10);
+}
+
+function closeSettings() {
+  settingsOverlay.classList.add("hidden");
+}
+
+function saveApiKey() {
+  const key = apiKeyInput.value.trim();
+  if (key) {
+    localStorage.setItem("geminiApiKey", key);
+  } else {
+    localStorage.removeItem("geminiApiKey");
+  }
+  settingsSaveStatus.classList.add("visible");
+  setTimeout(closeSettings, 500);
+}
+
+if (apiKeyToggle) {
+  apiKeyToggle.addEventListener("click", () => {
+    const showing = apiKeyInput.type === "text";
+    apiKeyInput.type = showing ? "password" : "text";
+    apiKeyToggle.textContent = showing ? "👁" : "🙈";
+    apiKeyToggle.title = showing ? "Show key" : "Hide key";
+  });
+}
+
+if (btnSettingsIndex) btnSettingsIndex.addEventListener("click", openSettings);
+if (btnSettingsChat) btnSettingsChat.addEventListener("click", openSettings);
+if (settingsClose) settingsClose.addEventListener("click", closeSettings);
+if (settingsSaveBtn) settingsSaveBtn.addEventListener("click", saveApiKey);
+if (apiKeyInput) {
+  apiKeyInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") saveApiKey();
+  });
+}
+overlayClickToClose(settingsOverlay, closeSettings);
+
+// Shared helper: click on the dimmed backdrop (not the panel itself) closes
+// the modal — same convention as the command palette overlay.
+function overlayClickToClose(overlay, close) {
+  if (!overlay) return;
+  overlay.addEventListener("mousedown", (e) => {
+    if (e.target === overlay) close();
+  });
+}
+
+// Inject the API key into fetch calls
+const originalFetch = window.fetch;
+window.fetch = async (...args) => {
+  let [resource, config] = args;
+  const key = localStorage.getItem("geminiApiKey");
+  if (key) {
+    config = config || {};
+    config.headers = { ...config.headers, "X-Gemini-Key": key };
+    args[1] = config;
+  }
+  return originalFetch(...args);
+};
+
+// Override the click handlers for index and ask to ensure key exists
+const _origStartIndexingFinal = startIndexing;
+startIndexing = async function () {
+  if (!localStorage.getItem("geminiApiKey")) {
+    openSettings();
+    return;
+  }
+  return _origStartIndexingFinal();
+};
+indexBtn.removeEventListener("click", _origStartIndexingFinal);
+indexBtn.addEventListener("click", startIndexing);
+
+const _origSendMessageFinal = sendMessage;
+sendMessage = async function () {
+  if (!localStorage.getItem("geminiApiKey")) {
+    openSettings();
+    return;
+  }
+  return _origSendMessageFinal();
+};
+// Re-bind the click event
+sendBtn.removeEventListener("click", _origSendMessage);
+sendBtn.addEventListener("click", sendMessage);
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HOME EXPLORE SECTION
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function renderHomeRepos() {
+  const listEl = document.getElementById("home-my-repos-list");
+  if (!listEl) return;
+  
+  try {
+    const res = await fetch(`${API}/repos`);
+    const globalRepos = await res.json();
+    let myRepos = JSON.parse(localStorage.getItem("myRepos") || "[]");
+    myRepos = myRepos.filter(r => globalRepos.includes(r));
+    
+    listEl.innerHTML = "";
+    if (myRepos.length === 0) {
+      listEl.innerHTML = `<div class="explore-empty">You haven't indexed any repositories yet.<br>Paste a GitHub link above to get started!</div>`;
+      return;
+    }
+    
+    myRepos.forEach(repo => {
+      const item = document.createElement("div");
+      item.className = "explore-item";
+      item.innerHTML = `
+        <span class="explore-item-name">${repo}</span>
+        <span class="explore-item-action">Chat →</span>
+      `;
+      item.addEventListener("click", () => {
+        switchToChat(repo);
+      });
+      listEl.appendChild(item);
+    });
+  } catch (err) {
+    listEl.innerHTML = `<div class="explore-empty">Could not load repositories. Make sure api.py is running.</div>`;
+  }
+}
+
+const homeSearchBtn = document.getElementById("home-search-btn");
+if (homeSearchBtn) {
+  homeSearchBtn.addEventListener("click", () => commandPalette.open({ scope: "global" }));
+}
+
+// Initial render
+renderHomeRepos();
+
+// Re-render when returning to home view
+backToIndexBtn.addEventListener("click", () => {
+  renderHomeRepos();
+});
