@@ -1,7 +1,7 @@
 
 
-from indexing import metadata_cache
 from indexing import llm_metadata_batch_generator as batch_gen
+from indexing import metadata_cache
 
 _EMPTY_METADATA = {"purpose": "", "responsibilities": [], "concepts": [], "keywords": []}
 
