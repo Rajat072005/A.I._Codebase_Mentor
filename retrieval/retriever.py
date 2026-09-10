@@ -5,7 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 def retrieve(question, embeddings, chunk_map, top_k=3):
 
-    question_embedding = _model.encode(question)
+    question_embedding = list(_model.embed([question]))[0]
     results = []
 
     for item in embeddings:

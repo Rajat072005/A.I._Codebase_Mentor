@@ -14,7 +14,7 @@ _label_encoder = joblib.load(_MODEL_DIR / "label_encoder.pkl")
 
 def classify_question(question: str) -> str:
 
-    embedding = _embedding_model.encode([question])
+    embedding = list(_embedding_model.embed([question]))
     prediction = _classifier.predict(embedding)
     intent = _label_encoder.inverse_transform(prediction)[0]
     return intent

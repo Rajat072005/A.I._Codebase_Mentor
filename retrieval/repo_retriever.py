@@ -5,7 +5,7 @@ from core.shared_model import shared_embedding_model as _model
 
 def retrieve_repo(question, embeddings, chunk_map, top_k):
 
-    question_embedding = _model.encode(question)
+    question_embedding = list(_model.embed([question]))[0]
     results = []
 
     for item in embeddings:

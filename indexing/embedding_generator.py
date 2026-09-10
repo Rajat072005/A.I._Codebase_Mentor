@@ -11,8 +11,8 @@ def generate_embeddings(chunks):
         code_text = build_document.build_code_embedding_document(chunk)
         repo_text = build_document.build_repo_embedding_document(chunk)
 
-        code_vector = _model.encode(code_text)
-        repo_vector = _model.encode(repo_text)
+        code_vector = list(_model.embed([code_text]))[0]
+        repo_vector = list(_model.embed([repo_text]))[0]
 
         embeddings.append({
             "id": f"{chunk['path']}_{chunk['chunk_id']}",
