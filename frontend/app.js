@@ -3,7 +3,7 @@
  * Handles: view switching, indexing flow (demo), and the Q&A chat interface.
  */
 
-const API = "http://localhost:5000";
+const API = "";
 
 // ─── State ──────────────────────────────────────────────────────────────────
 let currentRepo = null;
