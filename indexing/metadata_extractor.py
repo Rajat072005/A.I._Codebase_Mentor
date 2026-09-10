@@ -28,3 +28,5 @@ def detect_module_type(path):
             return MODULE_KEYWORDS[part], file_type
 
     return "general", file_type
+
+

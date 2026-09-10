@@ -1,9 +1,7 @@
 
 
 from sklearn.metrics.pairwise import cosine_similarity
-from sentence_transformers import SentenceTransformer
-
-_model = SentenceTransformer("all-MiniLM-L6-v2")
+from core.shared_model import shared_embedding_model as _model
 
 def retrieve_repo(question, embeddings, chunk_map, top_k):
 

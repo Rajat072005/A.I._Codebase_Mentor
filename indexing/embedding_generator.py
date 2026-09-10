@@ -1,9 +1,7 @@
 
 
-from sentence_transformers import SentenceTransformer
+from core.shared_model import shared_embedding_model as _model
 from indexing import build_document
-
-_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 def generate_embeddings(chunks):
     

@@ -1,9 +1,7 @@
 
 
-from sentence_transformers import SentenceTransformer
+from core.shared_model import shared_embedding_model as _model
 from sklearn.metrics.pairwise import cosine_similarity
-
-_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
 
 def retrieve(question, embeddings, chunk_map, top_k=3):
 
