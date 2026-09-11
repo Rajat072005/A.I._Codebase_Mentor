@@ -144,7 +144,7 @@ def ask():
         prompt = build_prompt(intent, question, "")
         answer = generate_answer(prompt)
         return jsonify({
-            "answer": answer or "Sorry, I couldn't generate a response.",
+            "answer": answer or "Sorry, I couldn't generate a response. Your Gemini API key might be out of quota. Click the ⚙️ button to enter a fresh API key, or wait a few minutes.",
             "intent": intent,
             "confidence": None
         })
@@ -169,7 +169,7 @@ def ask():
         answer = build_low_confidence_message(question)
 
     return jsonify({
-        "answer": answer or "Sorry, I couldn't generate a response.",
+        "answer": answer or "Sorry, I couldn't generate a response. Your Gemini API key might be out of quota. Click the ⚙️ button to enter a fresh API key, or wait a few minutes.",
         "intent": intent,
         "confidence": top_score
     })

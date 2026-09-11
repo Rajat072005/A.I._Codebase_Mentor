@@ -349,7 +349,7 @@ async function sendMessage() {
     }
   } catch (err) {
     thinkingEl.remove();
-    appendMessage("ai", "⚠️ Could not reach the server. Make sure api.py is running.", null, null, true);
+    appendMessage("ai", "⚠️ Could not reach the server. Make sure api.py is running. Try pasting a fresh API key in Settings if you've hit the limit.", null, null, true);
   } finally {
     isWaiting = false;
     sendBtn.disabled = false;
@@ -1370,6 +1370,7 @@ const apiKeyInput = document.getElementById("api-key-input");
 const apiKeyToggle = document.getElementById("api-key-toggle");
 const btnSettingsIndex = document.getElementById("settings-btn-index");
 const btnSettingsChat = document.getElementById("settings-btn-chat");
+const settingsDemoBtn = document.getElementById("settings-demo-btn");
 
 function openSettings() {
   apiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
@@ -1386,8 +1387,10 @@ function saveApiKey() {
   const key = apiKeyInput.value.trim();
   if (key) {
     localStorage.setItem("geminiApiKey", key);
+    settingsSaveStatus.textContent = "✓ Key saved";
   } else {
     localStorage.removeItem("geminiApiKey");
+    settingsSaveStatus.textContent = "✓ Demo Mode Activated";
   }
   settingsSaveStatus.classList.add("visible");
   setTimeout(closeSettings, 500);
@@ -1406,6 +1409,13 @@ if (btnSettingsIndex) btnSettingsIndex.addEventListener("click", openSettings);
 if (btnSettingsChat) btnSettingsChat.addEventListener("click", openSettings);
 if (settingsClose) settingsClose.addEventListener("click", closeSettings);
 if (settingsSaveBtn) settingsSaveBtn.addEventListener("click", saveApiKey);
+
+if (settingsDemoBtn) {
+  settingsDemoBtn.addEventListener("click", () => {
+    apiKeyInput.value = "";
+    saveApiKey();
+  });
+}
 if (apiKeyInput) {
   apiKeyInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") saveApiKey();
