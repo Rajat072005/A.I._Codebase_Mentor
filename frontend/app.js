@@ -1387,10 +1387,11 @@ function saveApiKey() {
   const key = apiKeyInput.value.trim();
   if (key) {
     localStorage.setItem("geminiApiKey", key);
+    localStorage.removeItem("demoModeActivated");
     settingsSaveStatus.textContent = "✓ Key saved";
   } else {
     localStorage.removeItem("geminiApiKey");
-    settingsSaveStatus.textContent = "✓ Demo Mode Activated";
+    settingsSaveStatus.textContent = "✓ Key cleared";
   }
   settingsSaveStatus.classList.add("visible");
   setTimeout(closeSettings, 500);
@@ -1413,7 +1414,11 @@ if (settingsSaveBtn) settingsSaveBtn.addEventListener("click", saveApiKey);
 if (settingsDemoBtn) {
   settingsDemoBtn.addEventListener("click", () => {
     apiKeyInput.value = "";
-    saveApiKey();
+    localStorage.removeItem("geminiApiKey");
+    localStorage.setItem("demoModeActivated", "true");
+    settingsSaveStatus.textContent = "✓ Demo Mode Activated";
+    settingsSaveStatus.classList.add("visible");
+    setTimeout(closeSettings, 500);
   });
 }
 if (apiKeyInput) {
@@ -1445,10 +1450,15 @@ window.fetch = async (...args) => {
   return originalFetch(...args);
 };
 
+// Check if user has provided a key OR explicitly selected Demo Mode
+function hasApiAccess() {
+  return localStorage.getItem("geminiApiKey") || localStorage.getItem("demoModeActivated") === "true";
+}
+
 // Override the click handlers for index and ask to ensure key exists
 const _origStartIndexingFinal = startIndexing;
 startIndexing = async function () {
-  if (!localStorage.getItem("geminiApiKey")) {
+  if (!hasApiAccess()) {
     openSettings();
     return;
   }
@@ -1459,7 +1469,7 @@ indexBtn.addEventListener("click", startIndexing);
 
 const _origSendMessageFinal = sendMessage;
 sendMessage = async function () {
-  if (!localStorage.getItem("geminiApiKey")) {
+  if (!hasApiAccess()) {
     openSettings();
     return;
   }
